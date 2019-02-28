@@ -26,6 +26,7 @@ class WebsitePagePipelineV2(object):
                 for person_element in person_elements:
                     person = get_person_from_element(spider.spacy_model, person_element.root)
                     if person and WebsiteContact.valid_contact(person):
+                        person['url'] = response.url
                         logger.debug(json.dumps(person))
                         WebsiteContact.add_contact(person, spider.contacts, spider.emails, False)
         except AttributeError as exc:

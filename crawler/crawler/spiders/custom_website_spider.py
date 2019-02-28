@@ -18,7 +18,7 @@ class CustomWebsiteSpider(scrapy.Spider):
 
     def __init__(self, link, **kwargs):
         self.start_urls.append(link)
-        self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
+        self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER, disable=['parser', 'tagger', 'textcat'])
         Span.set_extension('is_phone', getter=is_phone_getter, force=True)
         super().__init__(**kwargs)
 

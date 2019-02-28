@@ -1,3 +1,3 @@
 from scrapy import cmdline
 
-cmdline.execute("scrapy crawl TagLinkSpider -a link=https://www.melbournerealestate.com.au/agent/caitlin-okeeffe/".split())
+cmdline.execute("scrapy crawl TagLinkSpider -a link=https://madecomfy.com.au/about-us/meet-the-team/".split())

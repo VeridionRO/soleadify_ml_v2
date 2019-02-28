@@ -21,12 +21,12 @@ class UrlCrawlerScript(Process):
 
 
 def run_spider(website_id):
-    # crawler = UrlCrawlerScript(website_id)
-    # crawler.start()
-    # crawler.join()
-    process = CrawlerProcess(get_project_settings())
-    process.crawl(WebsiteSpider, website_id)
-    Thread(target=process.start).start()
+    crawler = UrlCrawlerScript(website_id)
+    crawler.start()
+    crawler.join()
+    # process = CrawlerProcess(get_project_settings())
+    # process.crawl(WebsiteSpider, website_id)
+    # Thread(target=process.start).start()
 
 
 @app.task

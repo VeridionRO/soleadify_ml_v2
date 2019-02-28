@@ -74,7 +74,7 @@ class WebsiteSpider(scrapy.Spider):
             for email in self.emails:
                 WebsiteContact.attach_email(contact, email)
 
-            logger.debug(json.dumps(contact))
+            url = contact['url']
             website_contact = self.website.extract_contact(contact)
             if not website_contact.id:
                 website_contact.save()
@@ -82,7 +82,7 @@ class WebsiteSpider(scrapy.Spider):
                 for item in items:
                     key = str(website_contact.id) + str(_type) + str(item)
                     website_contact_meta = WebsiteContactMeta(website_contact_id=website_contact.id, meta_key=_type,
-                                                              meta_value=item)
+                                                              meta_value=item, page=url)
                     website_contact_meta.update_phone_value(self.website.get_country_code())
                     metas[key] = website_contact_meta
             WebsiteContactMeta.objects.bulk_create(metas.values(), ignore_conflicts=True)

@@ -8,6 +8,7 @@ class WebsiteContactMeta(models.Model):
     website_contact_id = models.IntegerField()
     meta_key = models.CharField(max_length=255)
     meta_value = models.CharField(max_length=255)
+    page = models.CharField(max_length=1024)
 
     class Meta:
         db_table = 'website_contact_metas'
