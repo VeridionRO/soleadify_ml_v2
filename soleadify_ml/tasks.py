@@ -1,3 +1,5 @@
+from threading import Thread
+
 from scrapy.crawler import CrawlerProcess
 from crawler.spiders.website_spider import WebsiteSpider
 from soleadify_ml.celery import app
@@ -19,11 +21,14 @@ class UrlCrawlerScript(Process):
 
 
 def run_spider(website_id):
-    crawler = UrlCrawlerScript(website_id)
-    crawler.start()
-    crawler.join()
+    # crawler = UrlCrawlerScript(website_id)
+    # crawler.start()
+    # crawler.join()
+    process = CrawlerProcess(get_project_settings())
+    process.crawl(WebsiteSpider, website_id)
+    Thread(target=process.start).start()
 
 
 @app.task
-def scrapping(domain):
-    return run_spider(domain)
+def scrapping(website_id):
+    return run_spider(website_id)
