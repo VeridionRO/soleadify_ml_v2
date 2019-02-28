@@ -48,8 +48,9 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
     if not person and previous_person:
         return previous_person
     else:
-        if dom_element.getparent():
-            return get_person_from_element(spacy_model, dom_element.getparent(), person, depth + 1)
+        parent = dom_element.getparent()
+        if parent is not None:
+            return get_person_from_element(spacy_model, parent, person, depth + 1)
 
 
 def enough_for_a_person(doc):

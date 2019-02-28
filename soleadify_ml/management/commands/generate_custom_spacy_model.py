@@ -20,7 +20,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         n_iter = options['iteration'] or 10
-        model = options['model'] or 'en_core_web_lg'
+        model = options['model'] or 'en_core_web_sm'
         output_dir = settings.SPACY_CUSTOMN_MODEL_FOLDER
         train_data = convert_dataturks_to_spacy(settings.SPACY_NEW_ENTITIES_FILE)
 

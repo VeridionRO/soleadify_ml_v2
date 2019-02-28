@@ -16,7 +16,6 @@ class UrlCrawlerScript(Process):
     def run(self):
         self.crawler.crawl(WebsiteSpider, self.website_id)
         self.crawler.start()
-        # reactor.run()
 
 
 def run_spider(website_id):
