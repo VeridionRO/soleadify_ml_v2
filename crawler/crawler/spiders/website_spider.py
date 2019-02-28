@@ -1,14 +1,18 @@
 import json
 import logging
 import scrapy
+import spacy
 from scrapy.http import Request, HtmlResponse
 from scrapy.linkextractors import LinkExtractor
+from spacy.tokens.span import Span
+
 from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
 from soleadify_ml.models.website import Website
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import get_text_from_element
+from soleadify_ml.utils.SpiderUtils import is_phone_getter
+from django.conf import settings
 
 logger = logging.getLogger('soleadify_ml')
 
@@ -21,11 +25,15 @@ class WebsiteSpider(scrapy.Spider):
     pipeline = [WebsitePagePipelineV2]
     contacts = {}
     website = None
+    spacy_model = None
     emails = []
+    links = []
 
     def __init__(self, website_id, **kw):
-        super(WebsiteSpider, self).__init__(**kw)
         self.website = Website.objects.get(pk=website_id)
+        self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
+        Span.set_extension('is_phone', getter=is_phone_getter, force=True)
+        super(WebsiteSpider, self).__init__(**kw)
 
         if self.website:
             self.url = self.website.link
@@ -37,15 +45,17 @@ class WebsiteSpider(scrapy.Spider):
         return [Request(self.url, callback=self.parse, dont_filter=True)]
 
     def parse(self, response):
+        logger.debug(response.url)
+
         page = self._get_item(response)
         r = [page]
         r.extend(self._extract_requests(response))
-        logger.debug(response.url)
+
         return r
 
     def _get_item(self, response):
         try:
-            item = WebsitePageItem({'response': get_text_from_element(response)})
+            item = WebsitePageItem({'response': response})
             return item
         except AttributeError as exc:
             logger.error(str(exc))

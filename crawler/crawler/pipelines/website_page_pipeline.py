@@ -1,29 +1,13 @@
-import spacy
 import re
-from django.conf import settings
-from spacy.tokens.span import Span
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline
 
 
 class WebsitePagePipeline(object):
-    spacy_model = None
-
-    def open_spider(self, spider):
-        self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
-
-        def is_phone_getter(token):
-            pattern = re.compile("([\+|\(|\)|\-| |\.|\/]*[0-9]{1,9}[\+|\(|\)|\-| |\.|\/]*){7,}")
-            if pattern.match(token.text):
-                return True
-            else:
-                return False
-
-        Span.set_extension('is_phone', getter=is_phone_getter, force=True)
 
     @check_spider_pipeline
     def process_item(self, item, spider):
-        doc = self.spacy_model(item['text'])
+        doc = spider.spacy_model(item['text'])
         current_entities = []
 
         for ent in doc.ents:

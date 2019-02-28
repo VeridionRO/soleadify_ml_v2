@@ -8,13 +8,10 @@ from soleadify_ml.utils.SpiderUtils import check_spider_pipeline
 class TagLinkPipeline(object):
     spacy_model = None
 
-    def open_spider(self, spider):
-        self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
-
     @check_spider_pipeline
     def process_item(self, item, spider):
         link = item['link']
-        doc = self.spacy_model(item['text'])
+        doc = spider.spacy_model(item['text'])
         website_tags = {"content": item['text'], "annotation": [], "extras": None}
 
         for ent in doc.ents:

@@ -35,6 +35,7 @@ def get_text_from_element(element_html):
 
     return page_text
 
+
 def get_person_from_element(spacy_model, dom_element, previous_person=None, depth=1):
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
@@ -78,3 +79,11 @@ def enough_for_a_person(doc):
         return person
 
     return None
+
+
+def is_phone_getter(token):
+    pattern = re.compile("([\+|\(|\)|\-| |\.|\/]*[0-9]{1,9}[\+|\(|\)|\-| |\.|\/]*){7,}")
+    if pattern.match(token.text):
+        return True
+    else:
+        return False

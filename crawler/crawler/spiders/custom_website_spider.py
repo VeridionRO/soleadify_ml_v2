@@ -1,7 +1,11 @@
+import spacy
+from django.conf import settings
 import scrapy
+from spacy.tokens.span import Span
+
 from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
-from soleadify_ml.utils.SpiderUtils import get_text_from_element
+from soleadify_ml.utils.SpiderUtils import is_phone_getter
 
 
 class CustomWebsiteSpider(scrapy.Spider):
@@ -14,6 +18,8 @@ class CustomWebsiteSpider(scrapy.Spider):
 
     def __init__(self, link, **kwargs):
         self.start_urls.append(link)
+        self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
+        Span.set_extension('is_phone', getter=is_phone_getter, force=True)
         super().__init__(**kwargs)
 
     def parse(self, response):
