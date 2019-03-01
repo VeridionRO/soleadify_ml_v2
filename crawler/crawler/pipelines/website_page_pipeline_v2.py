@@ -1,7 +1,8 @@
 import logging
 import json
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element
+from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
+    added_time
 
 logger = logging.getLogger('soleadify_ml')
 
@@ -16,6 +17,7 @@ class WebsitePagePipelineV2(object):
             person_names = []
             has_one_person = False
             has_two_person = False
+            added_time = 0
 
             for ent in doc.ents:
                 if ent.label_ == 'ORG':
@@ -30,14 +32,6 @@ class WebsitePagePipelineV2(object):
                 else:
                     has_one_person = False
                     has_two_person = False
-
-            # if ent.label_ == 'PERSON':
-            #     name_key = re.sub(r'[^a-zA-Z]+', '', ent.text).lower()
-            #     if name_key in spider.contacts and spider.contacts[name_key]['DONE']:
-            #         continue
-            #
-            #     person_names.append(ent.text)
-            #     continue
 
             person_names = set(person_names)
             for person_name in person_names:
