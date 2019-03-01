@@ -34,22 +34,21 @@ class Command(BaseCommand):
                             sockobj.close()
                             read_socks.remove(sockobj)
                         else:
-                            doc = spacy_model(data)
+                            for doc in spacy_model.pipe([data]):
+                                for ent in doc.ents:
+                                    if ent.label_ == 'ORG':
+                                        pass
 
-                            for ent in doc.ents:
-                                if ent.label_ == 'ORG':
-                                    pass
+                                    if ent.label_ == 'EMAIL':
+                                        if not ent.root.like_email:
+                                            continue
 
-                                if ent.label_ == 'EMAIL':
-                                    if not ent.root.like_email:
-                                        continue
+                                    if ent.label_ == 'PHONE':
+                                        if not ent._.get('is_phone'):
+                                            continue
 
-                                if ent.label_ == 'PHONE':
-                                    if not ent._.get('is_phone'):
-                                        continue
-
-                                entities.append(
-                                    {'label': ent.label_, 'text': ent.text, 'start': ent.start, 'end': ent.end})
+                                    entities.append(
+                                        {'label': ent.label_, 'text': ent.text, 'start': ent.start, 'end': ent.end})
 
                             sockobj.sendall(json.dumps(entities).encode('utf8') + '--end--'.encode('utf8'))
                     except:
