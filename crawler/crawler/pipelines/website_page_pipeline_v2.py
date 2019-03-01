@@ -43,7 +43,7 @@ class WebsitePagePipelineV2(object):
             for person_name in person_names:
                 person_elements = response.xpath('//*[contains(text(),"%s")]' % person_name)
                 for person_element in person_elements:
-                    person = get_person_from_element(spider.spacy_model, person_element.root)
+                    person = get_person_from_element(spider.spacy_model, person_element.root, page=response.url)
                     if person and WebsiteContact.valid_contact(person):
                         person['URL'] = response.url
                         logger.debug(json.dumps(person))

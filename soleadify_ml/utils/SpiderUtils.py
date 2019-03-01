@@ -70,7 +70,7 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
     else:
         parent = dom_element.getparent()
         if parent is not None:
-            return get_person_from_element(spacy_model, parent, person, depth + 1)
+            return get_person_from_element(spacy_model, parent, person, depth + 1, page)
 
 
 def enough_for_a_person(doc):
