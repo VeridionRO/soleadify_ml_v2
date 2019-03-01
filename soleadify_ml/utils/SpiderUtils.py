@@ -48,13 +48,19 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
+    dom_element_text_key = re.sub(r'[^a-zA-Z]+', '', dom_element_text)
     docs = []
 
     t1 = time.time()
 
     try:
-        spider.soc_spacy.sendall(dom_element_text.encode('utf8') + '--end--'.encode('utf8'))
-        docs = json.loads(recv_end(spider.soc_spacy))
+        if dom_element_text_key in spider.cached_docs:
+            docs = spider.cached_docs[dom_element_text_key]
+            logger.debug("cached")
+        else:
+            spider.soc_spacy.sendall(dom_element_text.encode('utf8') + '--end--'.encode('utf8'))
+            docs = json.loads(recv_end(spider.soc_spacy))
+            logger.debug("hit")
     except:
         logger.error(page + "error")
 

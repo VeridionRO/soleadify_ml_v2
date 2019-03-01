@@ -25,6 +25,7 @@ class WebsiteSpider(scrapy.Spider):
     soc_spacy = None
     emails = []
     links = []
+    cached_docs = {}
 
     def __init__(self, website_id, **kw):
         self.website = Website.objects.get(pk=website_id)

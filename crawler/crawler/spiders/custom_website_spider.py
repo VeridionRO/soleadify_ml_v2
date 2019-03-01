@@ -12,6 +12,7 @@ class CustomWebsiteSpider(scrapy.Spider):
     pipeline = [WebsitePagePipelineV2]
     contacts = {}
     emails = []
+    cached_docs = {}
 
     def __init__(self, link, **kwargs):
         self.start_urls.append(link)
