@@ -55,7 +55,7 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
     for doc in spacy_model.pipe([dom_element_text]):
         person = enough_for_a_person(doc)
     added_time += time.time() - t1
-    logger.debug(page, added_time)
+    logger.debug(page + str(added_time))
 
     if person and WebsiteContact.valid_contact(person, 4):
         return person
