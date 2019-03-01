@@ -46,17 +46,20 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
+    person = None
 
     t1 = time.time()
-    doc = spacy_model(dom_element_text)
 
+    # doc = spacy_model(dom_element_text)
+    # person = enough_for_a_person(doc)
+    for doc in spacy_model.pipe([dom_element_text]):
+        person = enough_for_a_person(doc)
     added_time += time.time() - t1
-    person = enough_for_a_person(doc)
 
     if person and WebsiteContact.valid_contact(person, 4):
         return person
 
-    if depth > 3:
+    if depth > 4:
         logger.debug(added_time)
         return previous_person
 
