@@ -26,6 +26,7 @@ class WebsiteContact(models.Model):
         important_keys = ['PERSON', 'TITLE', 'EMAIL', 'PHONE']
         contact_keys = contact.keys()
         important_keys_intersection = list(set(important_keys) & set(contact_keys))
+
         if len(important_keys_intersection) <= length:
             return False
 
@@ -38,7 +39,7 @@ class WebsiteContact(models.Model):
         return True
 
     @staticmethod
-    def add_contact(contact, saved_contacts, stored_emails=(), from_tuple=True):
+    def add_contact(contact, spider, from_tuple=True):
         new_contact = {}
         if from_tuple:
             for key, contact_part in contact.items():
@@ -55,19 +56,28 @@ class WebsiteContact(models.Model):
             emails = new_contact['EMAIL']
 
             for email in emails:
-                if email in stored_emails:
-                    stored_emails.remove(email)
+                if email in spider.emails:
+                    spider.emails.remove(email)
 
         for split_name_part in split_name_parts:
             if split_name_part[1] in ['GivenName', 'Surname', 'MiddleName']:
                 new_contact[split_name_part[1]] = split_name_part[0].lower()
 
-        if name_key in saved_contacts:
-            WebsiteContact.merge_dicts(saved_contacts[name_key], new_contact)
+        if name_key in spider.contacts:
+            WebsiteContact.merge_dicts(spider.contacts[name_key], new_contact)
         else:
-            saved_contacts[name_key] = new_contact
+            spider.contacts[name_key] = new_contact
 
-        return saved_contacts[name_key]
+        important_keys = ['PERSON', 'TITLE', 'EMAIL', 'PHONE']
+        contact_keys = new_contact.keys()
+        important_keys_intersection = list(set(important_keys) & set(contact_keys))
+
+        if len(important_keys_intersection) >= 3:
+            spider.contacts[name_key]['DONE'] = True
+        else:
+            spider.contacts[name_key]['DONE'] = False
+
+        return spider.contacts[name_key]
 
     @staticmethod
     def attach_email(contact, email):

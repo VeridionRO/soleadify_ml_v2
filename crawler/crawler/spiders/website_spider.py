@@ -74,7 +74,7 @@ class WebsiteSpider(scrapy.Spider):
             for email in self.emails:
                 WebsiteContact.attach_email(contact, email)
 
-            url = contact['url']
+            url = contact['URL']
             website_contact = self.website.extract_contact(contact)
             if not website_contact.id:
                 website_contact.save()

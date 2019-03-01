@@ -41,7 +41,8 @@ class Website(models.Model):
         dirty_contact.pop('GivenName', None)
         dirty_contact.pop('Surname', None)
         dirty_contact.pop('MiddleName', None)
-        dirty_contact.pop('url', None)
+        dirty_contact.pop('URL', None)
+        dirty_contact.pop('DONE', None)
 
         return website_contact
 

@@ -42,7 +42,10 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
     doc = spacy_model(dom_element_text)
     person = enough_for_a_person(doc)
 
-    if depth > 5:
+    if person and WebsiteContact.valid_contact(person, 4):
+        return person
+
+    if depth > 4:
         return previous_person
 
     if not person and previous_person:

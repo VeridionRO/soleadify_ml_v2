@@ -1,6 +1,6 @@
 import logging
 import json
-
+import re
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element
 
@@ -18,17 +18,26 @@ class WebsitePagePipelineV2(object):
 
             for ent in doc.ents:
                 if ent.label_ == 'PERSON':
+                    name_key = re.sub(r'[^a-zA-Z]+', '', ent.text).lower()
+                    if name_key in spider.contacts and spider.contacts[name_key]['DONE']:
+                        continue
+
                     person_names.append(ent.text)
                     continue
 
+            person_names = set(person_names)
             for person_name in person_names:
                 person_elements = response.xpath('//*[contains(text(),"%s")]' % person_name)
                 for person_element in person_elements:
                     person = get_person_from_element(spider.spacy_model, person_element.root)
                     if person and WebsiteContact.valid_contact(person):
-                        person['url'] = response.url
+                        person['URL'] = response.url
                         logger.debug(json.dumps(person))
-                        WebsiteContact.add_contact(person, spider.contacts, spider.emails, False)
+                        new_contact = WebsiteContact.add_contact(person, spider, False)
+
+                        if new_contact['DONE']:
+                            break
+
         except AttributeError as exc:
             logger.error(str(exc))
             pass
