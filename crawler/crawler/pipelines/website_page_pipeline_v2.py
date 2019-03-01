@@ -19,8 +19,8 @@ class WebsitePagePipelineV2(object):
             try:
                 spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
                 docs = json.loads(recv_end(spider.soc_spacy))
-            except:
-                logger.error(response.url + "error")
+            except Exception as ve:
+                logger.error(response.url + ": " + ve)
 
             person_names = []
             has_one_person = False
