@@ -40,12 +40,10 @@ class WebsiteSpider(scrapy.Spider):
             self.link_extractor = LinkExtractor()
 
     def start_requests(self):
-        logger.debug('start')
+        logger.debug('start website: ' + self.url)
         return [Request(self.url, callback=self.parse, dont_filter=True)]
 
     def parse(self, response):
-        logger.debug(response.url)
-
         page = self._get_item(response)
         r = [page]
         r.extend(self._extract_requests(response))
@@ -85,3 +83,4 @@ class WebsiteSpider(scrapy.Spider):
                     website_contact_meta.update_phone_value(self.website.get_country_code())
                     metas[key] = website_contact_meta
             WebsiteContactMeta.objects.bulk_create(metas.values(), ignore_conflicts=True)
+        logger.debug('end website: ' + self.url)

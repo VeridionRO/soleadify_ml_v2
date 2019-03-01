@@ -1,5 +1,7 @@
 import json
 import logging
+from datetime import time
+import time
 from lxml import etree
 import functools
 import html2text
@@ -48,11 +50,16 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
     dom_element_text = get_text_from_element(element_html)
     docs = []
 
+    t1 = time.time()
+
     try:
         spider.soc_spacy.sendall(dom_element_text.encode('utf8') + '--end--'.encode('utf8'))
         docs = json.loads(recv_end(spider.soc_spacy))
     except:
         logger.error(page + "error")
+
+    added_time += time.time() - t1
+    logger.debug(page + ' - ' + str(added_time))
 
     person = enough_for_a_person(docs)
 
