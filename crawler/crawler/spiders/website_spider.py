@@ -1,18 +1,15 @@
-import json
 import logging
+import socket
+from soleadify_ml.utils.SocketUtils import connect
 import scrapy
-import spacy
 from scrapy.http import Request, HtmlResponse
 from scrapy.linkextractors import LinkExtractor
-from spacy.tokens.span import Span
 
 from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
 from soleadify_ml.models.website import Website
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import is_phone_getter
-from django.conf import settings
 
 logger = logging.getLogger('soleadify_ml')
 
@@ -25,15 +22,17 @@ class WebsiteSpider(scrapy.Spider):
     pipeline = [WebsitePagePipelineV2]
     contacts = {}
     website = None
-    spacy_model = None
+    soc_spacy = None
     emails = []
     links = []
 
     def __init__(self, website_id, **kw):
         self.website = Website.objects.get(pk=website_id)
-        self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
-        Span.set_extension('is_phone', getter=is_phone_getter, force=True)
         super(WebsiteSpider, self).__init__(**kw)
+
+        self.soc_spacy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.soc_spacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        connect(self.soc_spacy, '', 50010)
 
         if self.website:
             self.url = self.website.link

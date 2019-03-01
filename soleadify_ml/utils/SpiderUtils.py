@@ -1,12 +1,12 @@
+import json
 import logging
-from datetime import time
-import time
 from lxml import etree
 import functools
 import html2text
 import re
 
 from soleadify_ml.models.website_contact import WebsiteContact
+from soleadify_ml.utils.SocketUtils import recv_end
 
 logger = logging.getLogger('soleadify_ml')
 added_time = 0
@@ -42,20 +42,19 @@ def get_text_from_element(element_html):
     return page_text
 
 
-def get_person_from_element(spacy_model, dom_element, previous_person=None, depth=1, page=''):
+def get_person_from_element(spider, dom_element, previous_person=None, depth=1, page=''):
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
-    person = None
+    docs = []
 
-    t1 = time.time()
+    try:
+        spider.soc_spacy.sendall(dom_element_text.encode('utf8') + '--end--'.encode('utf8'))
+        docs = json.loads(recv_end(spider.soc_spacy))
+    except:
+        logger.error(page + "error")
 
-    # doc = spacy_model(dom_element_text)
-    # person = enough_for_a_person(doc)
-    for doc in spacy_model.pipe([dom_element_text]):
-        person = enough_for_a_person(doc)
-    added_time += time.time() - t1
-    logger.debug(page + ' - ' + str(added_time))
+    person = enough_for_a_person(docs)
 
     if person and WebsiteContact.valid_contact(person, 4):
         return person
@@ -68,31 +67,22 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
     else:
         parent = dom_element.getparent()
         if parent is not None:
-            return get_person_from_element(spacy_model, parent, person, depth + 1, page)
+            return get_person_from_element(spider, parent, person, depth + 1, page)
 
 
-def enough_for_a_person(doc):
+def enough_for_a_person(docs):
     person = {}
 
-    for ent in doc.ents:
-        ent_text = ent.text
+    for ent in docs:
+        ent_text = ent['text']
 
-        if ent.label_ == 'ORG':
+        if ent['label'] == 'ORG':
             continue
 
-        if ent.label_ == 'EMAIL':
-            if not ent.root.like_email:
-                continue
-
-        if ent.label_ == 'PHONE':
-            if not ent._.get('is_phone'):
-                continue
-            ent_text = re.sub(r'[^0-9]+', '', ent_text)
-
-        if ent.label_ in person:
-            person[ent.label_].append(ent_text)
+        if ent['label'] in person:
+            person[ent['label']].append(ent_text)
         else:
-            person[ent.label_] = [ent_text]
+            person[ent['label']] = [ent_text]
 
     if WebsiteContact.valid_contact(person):
         return person

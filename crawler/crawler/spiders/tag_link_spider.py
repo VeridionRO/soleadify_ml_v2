@@ -1,11 +1,9 @@
+import socket
+from soleadify_ml.utils.SocketUtils import connect
 import scrapy
-import spacy
-from django.conf import settings
-from spacy.tokens import Span
-
 from crawler.pipelines.tag_link_pipeline import TagLinkPipeline
 from crawler.items import WebsitePageItem
-from soleadify_ml.utils.SpiderUtils import get_text_from_element, is_phone_getter
+from soleadify_ml.utils.SpiderUtils import get_text_from_element
 
 
 class TagLinkSpider(scrapy.Spider):
@@ -19,8 +17,11 @@ class TagLinkSpider(scrapy.Spider):
 
     def __init__(self, link, **kwargs):
         self.start_urls.append(link)
-        self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
-        Span.set_extension('is_phone', getter=is_phone_getter, force=True)
+
+        self.soc_spacy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self.soc_spacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        connect(self.soc_spacy, '', 50010)
+
         super().__init__(**kwargs)
 
     def parse(self, response):

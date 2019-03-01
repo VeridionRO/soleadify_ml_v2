@@ -1,8 +1,8 @@
 import logging
 import json
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
-    added_time
+from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element
+from soleadify_ml.utils.SocketUtils import recv_end
 
 logger = logging.getLogger('soleadify_ml')
 
@@ -12,23 +12,30 @@ class WebsitePagePipelineV2(object):
     def process_item(self, item, spider):
         try:
             response = item['response']
+            logger.debug("start page: " + response.url)
             text = get_text_from_element(response.text)
-            doc = spider.spacy_model(text)
+            docs = []
+
+            try:
+                spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
+                docs = json.loads(recv_end(spider.soc_spacy))
+            except:
+                logger.error(response.url + "error")
+
             person_names = []
             has_one_person = False
             has_two_person = False
-            added_time = 0
 
-            for ent in doc.ents:
-                if ent.label_ == 'ORG':
+            for ent in docs:
+                if ent['label'] == 'ORG':
                     continue
-                if ent.label_ == 'PERSON':
+                if ent['label'] == 'PERSON':
                     if has_one_person:
                         if has_two_person:
                             continue
                         has_two_person = True
                     has_one_person = True
-                    person_names.append(ent.text)
+                    person_names.append(ent['text'])
                 else:
                     has_one_person = False
                     has_two_person = False
@@ -37,7 +44,7 @@ class WebsitePagePipelineV2(object):
             for person_name in person_names:
                 person_elements = response.xpath('//*[contains(text(),"%s")]' % person_name)
                 for person_element in person_elements:
-                    person = get_person_from_element(spider.spacy_model, person_element.root, page=response.url)
+                    person = get_person_from_element(spider, person_element.root, page=response.url)
                     if person and WebsiteContact.valid_contact(person):
                         person['URL'] = response.url
                         logger.debug(json.dumps(person))
@@ -45,6 +52,7 @@ class WebsitePagePipelineV2(object):
 
                         if new_contact['DONE']:
                             break
+            logger.debug("end page: " + response.url)
 
         except AttributeError as exc:
             logger.error(str(exc))
