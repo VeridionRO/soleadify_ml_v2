@@ -59,7 +59,7 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
     if person and WebsiteContact.valid_contact(person, 4):
         return person
 
-    if depth > 4:
+    if depth > 3:
         logger.debug(added_time)
         return previous_person
 
