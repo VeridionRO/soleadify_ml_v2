@@ -42,7 +42,7 @@ def get_text_from_element(element_html):
     return page_text
 
 
-def get_person_from_element(spacy_model, dom_element, previous_person=None, depth=1):
+def get_person_from_element(spacy_model, dom_element, previous_person=None, depth=1, page=''):
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
@@ -57,14 +57,15 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
     added_time += time.time() - t1
 
     if person and WebsiteContact.valid_contact(person, 4):
+        logger.debug(page, added_time)
         return person
 
     if depth > 3:
-        logger.debug(added_time)
+        logger.debug(page, added_time)
         return previous_person
 
     if not person and previous_person:
-        logger.debug(added_time)
+        logger.debug(page, added_time)
         return previous_person
     else:
         parent = dom_element.getparent()
