@@ -8,9 +8,8 @@ import re
 
 from soleadify_ml.models.website_contact import WebsiteContact
 
-t = None
 logger = logging.getLogger('soleadify_ml')
-added_time = None
+added_time = 0
 
 
 def check_spider_pipeline(process_item_method):
@@ -50,6 +49,7 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
 
     t1 = time.time()
     doc = spacy_model(dom_element_text)
+
     added_time += time.time() - t1
     person = enough_for_a_person(doc)
 
@@ -57,6 +57,7 @@ def get_person_from_element(spacy_model, dom_element, previous_person=None, dept
         return person
 
     if depth > 4:
+        logger.debug(added_time)
         return previous_person
 
     if not person and previous_person:
