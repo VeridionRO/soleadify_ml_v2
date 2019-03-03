@@ -6,7 +6,7 @@ from select import select
 from spacy.tokens.span import Span
 
 from soleadify_ml.utils.SocketUtils import recv_end, socket_bind
-from soleadify_ml.utils.SpiderUtils import is_phone_getter
+from soleadify_ml.utils.SpiderUtils import is_phone_getter, get_ent
 
 
 class Command(BaseCommand):
@@ -36,28 +36,9 @@ class Command(BaseCommand):
                         else:
                             for doc in spacy_model.pipe([data]):
                                 for ent in doc.ents:
-                                    current_entity = self.get_ent(ent, entities)
+                                    current_entity = get_ent(ent)
                                     entities.append(current_entity) if current_entity else None
 
                             sockobj.sendall(json.dumps(entities).encode('utf8') + '--end--'.encode('utf8'))
                     except:
                         pass
-
-    @staticmethod
-    def get_ent(current_entity, entities):
-        if current_entity.label_ == 'ORG':
-            return None
-
-        if current_entity.label_ == 'EMAIL':
-            if not current_entity.root.like_email:
-                return None
-
-        if current_entity.label_ == 'PHONE':
-            if not current_entity._.get('is_phone'):
-                return None
-
-        for entity in entities:
-            if entity['label'] == current_entity.label_ and entity['text'] == current_entity.text:
-                return None
-        return {'label': current_entity.label_, 'text': current_entity.text, 'start': current_entity.start_char,
-                'end': current_entity.end_char}

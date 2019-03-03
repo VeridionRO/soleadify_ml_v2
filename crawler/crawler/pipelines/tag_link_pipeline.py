@@ -1,33 +1,26 @@
 import logging
 import re
 import json
-
-from soleadify_ml.utils.SocketUtils import recv_end
+import spacy
+from django.conf import settings
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline
 
 logger = logging.getLogger('soleadify_ml')
 
 
 class TagLinkPipeline(object):
-    spacy_model = None
 
     @check_spider_pipeline
     def process_item(self, item, spider):
         link = item['link']
-        docs = []
-
-        try:
-            spider.soc_spacy.sendall(item['text'].encode('utf8') + '--end--'.encode('utf8'))
-            docs = json.loads(recv_end(spider.soc_spacy))
-        except:
-            logger.error("error")
-
+        spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
+        doc = spacy_model(item['text'])
         website_tags = {"content": item['text'], "annotation": [], "extras": None}
 
-        for ent in docs:
+        for ent in doc.ents:
             entity = {
-                "label": [ent['label']],
-                "points": [{"start": ent['start'] - 1, "end": ent['end'] - 2, "text": ent['text']}]
+                "label": [ent.label_],
+                "points": [{"start": ent.start_char - 1, "end": ent.end_char - 1, "text": ent.text}]
             }
             website_tags["annotation"].append(entity)
 

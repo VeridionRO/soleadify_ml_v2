@@ -37,7 +37,7 @@ def get_text_from_element(element_html):
 
     page_text = converter.handle(element_html)
 
-    page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()\']+', ' ', page_text)
+    page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()\'|]+', ' ', page_text)
     page_text = re.sub(r'(\s*\n\s*)+', '\n', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
 
@@ -50,7 +50,6 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
     dom_element_text = get_text_from_element(element_html)
     dom_element_text_key = hashlib.md5(dom_element_text.encode()).hexdigest()
     docs = []
-
     t1 = time.time()
 
     try:
@@ -60,6 +59,15 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
         else:
             spider.soc_spacy.sendall(dom_element_text.encode('utf8') + '--end--'.encode('utf8'))
             docs = json.loads(recv_end(spider.soc_spacy))
+            new_docs = {}
+
+            for doc in docs:
+                doc_key_text = doc['label'] + doc['text']
+                doc_key = hashlib.md5(doc_key_text.encode()).hexdigest()
+                new_docs[doc_key] = doc
+
+            docs = new_docs.values()
+
             spider.cached_docs[dom_element_text_key] = docs
             logger.debug("hit")
     except:
@@ -110,3 +118,19 @@ def is_phone_getter(token):
         return True
     else:
         return False
+
+
+def get_ent(current_entity):
+    if current_entity.label_ == 'ORG':
+        return None
+
+    if current_entity.label_ == 'EMAIL':
+        if not current_entity.root.like_email:
+            return None
+
+    if current_entity.label_ == 'PHONE':
+        if not current_entity._.get('is_phone'):
+            return None
+
+    return {'label': current_entity.label_, 'text': current_entity.text, 'start': current_entity.start_char,
+            'end': current_entity.end_char}
