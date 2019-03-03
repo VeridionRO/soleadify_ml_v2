@@ -6,7 +6,7 @@ from lxml import etree
 import functools
 import html2text
 import re
-
+import hashlib
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SocketUtils import recv_end
 
@@ -48,7 +48,7 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
-    dom_element_text_key = re.sub(r'[^a-zA-Z]+', '', dom_element_text)
+    dom_element_text_key = hashlib.md5(dom_element_text.encode()).hexdigest()
     docs = []
 
     t1 = time.time()
@@ -73,7 +73,7 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
     if person and WebsiteContact.valid_contact(person, 4):
         return person
 
-    if depth > 3:
+    if depth > 4:
         return previous_person
 
     if not person and previous_person:

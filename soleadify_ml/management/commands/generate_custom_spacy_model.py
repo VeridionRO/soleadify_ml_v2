@@ -12,7 +12,7 @@ class Command(BaseCommand):
     help = 'Recreate custom spacy model'
     description = 'This command will recreate your spacy_customn_model using the SPACY_NEW_ENTITIES_FILE ' \
                   'that contains annotations of the new labels'
-    custom_labels = ['TITLE', 'ORG', 'PERSON', 'EMAIL', 'PHONE', 'LAW_CAT']
+    custom_labels = ['TITLE', 'ORG', 'PERSON', 'EMAIL', 'PHONE']
 
     def add_arguments(self, parser):
         parser.add_argument('-i', '--iteration', type=str, help='Number of iterations')
