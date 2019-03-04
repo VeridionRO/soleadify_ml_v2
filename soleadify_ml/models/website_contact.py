@@ -1,6 +1,7 @@
+import hashlib
+
 from django.db import models
 import probablepeople as pp
-import re
 from email_split import email_split
 
 
@@ -50,7 +51,7 @@ class WebsiteContact(models.Model):
         name = new_contact['PERSON'][0]
         new_contact['PERSON'] = name
         split_name_parts = pp.parse(name)
-        name_key = re.sub(r'[^a-zA-Z]+', '', name).lower()
+        name_key = WebsiteContact.get_name_key(name)
 
         if 'EMAIL' in new_contact:
             emails = new_contact['EMAIL']
@@ -68,7 +69,7 @@ class WebsiteContact(models.Model):
         else:
             spider.contacts[name_key] = new_contact
 
-        important_keys = ['PERSON', 'TITLE', 'EMAIL', 'PHONE']
+        important_keys = ['PERSON', 'EMAIL', 'PHONE']
         contact_keys = new_contact.keys()
         important_keys_intersection = list(set(important_keys) & set(contact_keys))
 
@@ -136,3 +137,7 @@ class WebsiteContact(models.Model):
                     pass
                 else:
                     dic1[key] = values
+
+    @staticmethod
+    def get_name_key(name):
+        return hashlib.md5(name.encode()).hexdigest()

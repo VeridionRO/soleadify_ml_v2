@@ -46,6 +46,12 @@ class WebsitePagePipelineV2(object):
 
             person_names = set(person_names)
             for person_name in person_names:
+                name_key = WebsiteContact.get_name_key(person_name)
+
+                if name_key in spider.contacts and spider.contacts[name_key]['DONE']:
+                    logger.debug("contact cached: " + json.dumps(spider.contacts[name_key]) + " : " + response.url)
+                    continue
+
                 person_elements = new_response.xpath('//*[contains(text(),"%s")]' % person_name)
                 for person_element in person_elements:
                     person = get_person_from_element(spider, person_element.root, page=response.url)
@@ -57,7 +63,6 @@ class WebsitePagePipelineV2(object):
                         if new_contact['DONE']:
                             break
             logger.debug("end page: " + response.url)
-
         except AttributeError as exc:
             logger.error(str(exc))
             pass

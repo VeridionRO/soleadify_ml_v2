@@ -37,7 +37,7 @@ def get_text_from_element(element_html):
 
     page_text = converter.handle(element_html)
 
-    page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()\'|]+', ' ', page_text)
+    page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()_\'|]+', ' ', page_text)
     page_text = re.sub(r'(\s*\n\s*)+', '\n', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
 
@@ -55,7 +55,6 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
     try:
         if dom_element_text_key in spider.cached_docs:
             docs = spider.cached_docs[dom_element_text_key]
-            logger.debug("cached")
         else:
             spider.soc_spacy.sendall(dom_element_text.encode('utf8') + '--end--'.encode('utf8'))
             docs = json.loads(recv_end(spider.soc_spacy))
@@ -69,9 +68,8 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
             docs = new_docs.values()
 
             spider.cached_docs[dom_element_text_key] = docs
-            logger.debug("hit")
     except:
-        logger.error(page + "error")
+        logger.error(page + ": error")
 
     added_time += time.time() - t1
     logger.debug(page + ' - ' + str(added_time))
