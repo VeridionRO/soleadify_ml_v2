@@ -54,12 +54,17 @@ class Command(BaseCommand):
                 losses = {}
                 for text, annotations in train_data:
                     # print(text)
-                    nlp.update(
-                        [text],  # batch of texts
-                        [annotations],  # batch of annotations
-                        drop=0.2,  # dropout - make it harder to memorise data
-                        sgd=optimizer,  # callable to update weights
-                        losses=losses)
+                    try:
+                        nlp.update(
+                            [text],  # batch of texts
+                            [annotations],  # batch of annotations
+                            drop=0.2,  # dropout - make it harder to memorise data
+                            sgd=optimizer,  # callable to update weights
+                            losses=losses)
+                    except Exception:
+                        print('error')
+                        print(text)
+                        continue
                 print(losses)
 
         output_dir = Path(output_dir)

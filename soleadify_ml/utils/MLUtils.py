@@ -80,7 +80,7 @@ def extract_topn_from_vector(feature_names, sorted_items, topn=100):
 def convert_dataturks_to_spacy(dataturks_json_filepath):
     try:
         training_data = []
-        with open(dataturks_json_filepath, 'r') as f:
+        with open(dataturks_json_filepath, 'r', encoding='utf-8') as f:
             lines = f.readlines()
 
         for line in lines:
