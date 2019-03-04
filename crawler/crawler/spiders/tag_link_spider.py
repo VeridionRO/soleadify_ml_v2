@@ -1,7 +1,7 @@
 import socket
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
-# from crawler.pipelines.tag_link_pipeline import TagLinkPipeline
+from crawler.pipelines.tag_link_pipeline import TagLinkPipeline
 from crawler.items import WebsitePageItem
 from soleadify_ml.utils.SpiderUtils import get_text_from_element
 
@@ -10,7 +10,7 @@ class TagLinkSpider(scrapy.Spider):
     name = 'TagLinkSpider'
     allowed_domains = ['*']
     start_urls = []
-    # pipeline = [TagLinkPipeline]
+    pipeline = [TagLinkPipeline]
     contacts = {}
     emails = []
     spacy_model = None
