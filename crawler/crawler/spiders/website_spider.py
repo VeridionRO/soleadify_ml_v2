@@ -43,7 +43,7 @@ class WebsiteSpider(scrapy.Spider):
             self.link_extractor = LinkExtractor()
 
             self.website.contact_state = 'working'
-            self.website.save()
+            self.website.save(update_fields=['contact_state'])
         elif self.website and self.website.contact_state != 'pending':
             logger.debug('already processed: ' + self.website.link)
         else:
