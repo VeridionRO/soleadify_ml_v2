@@ -1,4 +1,8 @@
+import logging
 from socket import socket, AF_INET, SOCK_STREAM
+from time import sleep
+
+logger = logging.getLogger('soleadify_ml')
 
 
 def connect(soc, host, port):
@@ -6,6 +10,14 @@ def connect(soc, host, port):
         soc.connect((host, port))
         return True
     except:
+        logger.debug('failed to connect once')
+        try:
+            sleep(20)
+            logger.debug('sleep 20s and retry')
+            soc.connect((host, port))
+        except:
+            logger.debug('failed to connect twice, die')
+
         return False
 
 

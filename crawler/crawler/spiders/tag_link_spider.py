@@ -1,4 +1,7 @@
 import socket
+
+from django.conf import settings
+
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from crawler.pipelines.tag_link_pipeline import TagLinkPipeline
@@ -20,7 +23,7 @@ class TagLinkSpider(scrapy.Spider):
 
         self.soc_spacy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_spacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        connect(self.soc_spacy, '', 50010)
+        connect(self.soc_spacy, '', settings.SPACY_PORT)
 
         super().__init__(**kwargs)
 

@@ -1,3 +1,4 @@
+from django_mysql.models import EnumField
 from django.db import models
 from django.db.models import Count
 from soleadify_ml.models.website_page import WebsitePage
@@ -15,7 +16,7 @@ class Website(models.Model):
     site_value = models.IntegerField()
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
-
+    contact_state = EnumField(choices=['pending', 'working', 'finished'])
     country_code = None
 
     class Meta:

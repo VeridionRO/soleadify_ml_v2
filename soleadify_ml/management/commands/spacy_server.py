@@ -18,7 +18,7 @@ class Command(BaseCommand):
         Span.set_extension('is_phone', getter=is_phone_getter, force=True)
 
         self.stdout.write("Loaded spacy server", ending='\n')
-        main_socks, read_socks, write_socks = socket_bind('', 50010)
+        main_socks, read_socks, write_socks = socket_bind('', settings.SPACY_PORT)
         while True:
             readable, writeable, exceptions = select(read_socks, write_socks, [])
             for sockobj in readable:

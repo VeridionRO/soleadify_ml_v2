@@ -21,7 +21,7 @@ class WebsitePagePipelineV2(object):
             docs = []
 
             try:
-                spider.soc_spacy.sendall(text.encode('utf8') + '--params--1'.encode('utf8') + '--end--'.encode('utf8'))
+                spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
                 docs = json.loads(recv_end(spider.soc_spacy))
             except Exception as ve:
                 logger.error(response.url + ": " + ve)
