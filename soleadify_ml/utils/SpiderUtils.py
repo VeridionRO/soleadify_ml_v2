@@ -34,6 +34,7 @@ def get_text_from_element(element_html):
     converter = html2text.HTML2Text(bodywidth=0)
     converter.ignore_images = True
     converter.single_line_break = True
+    converter.emphasis_mark = ' '
 
     page_text = converter.handle(element_html)
 
