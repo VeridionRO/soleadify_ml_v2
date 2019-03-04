@@ -14,7 +14,7 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
 
-        spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
+        spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER, disable=['parser', 'tagger', 'textcat'])
         Span.set_extension('is_phone', getter=is_phone_getter, force=True)
 
         self.stdout.write("Loaded spacy server", ending='\n')
