@@ -12,8 +12,8 @@ def connect(soc, host, port):
     except:
         logger.debug('failed to connect once')
         try:
-            sleep(20)
-            logger.debug('sleep 20s and retry')
+            sleep(60)
+            logger.debug('sleep 60s and retry')
             soc.connect((host, port))
         except:
             logger.debug('failed to connect twice, die')
