@@ -25,9 +25,10 @@ class WebsiteSpider(scrapy.Spider):
     soc_spacy = None
     url = None
     emails = []
-    links = []
+    cached_links = {}
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
+    max_page = 400
 
     def __init__(self, website_id, **kw):
         self.website = Website.objects.get(pk=website_id)
@@ -88,7 +89,10 @@ class WebsiteSpider(scrapy.Spider):
             links = self.link_extractor.extract_links(response)
             links = sorted(links, key=sort_links, reverse=True)
             for link in links:
-                parsed_links.append(link) if not self.is_ignored(link) else None
+                if self.max_page >= 0 and not self.is_ignored(link) and link.url not in self.cached_links:
+                    parsed_links.append(link)
+                    self.cached_links[link.url] = True
+                    self.max_page -= 1
 
             r.extend(Request(x.url, callback=self.parse) for x in parsed_links)
         return r
@@ -119,6 +123,9 @@ class WebsiteSpider(scrapy.Spider):
             logger.debug('end website: ' + self.website.link)
 
     def is_ignored(self, link):
+        if self.website.domain not in link.url:
+            return True
+
         for ignored in self.ignored_links:
             if ignored in link.url:
                 return True
