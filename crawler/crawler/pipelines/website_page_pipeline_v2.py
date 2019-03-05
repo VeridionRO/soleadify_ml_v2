@@ -12,8 +12,8 @@ logger = logging.getLogger('soleadify_ml')
 class WebsitePagePipelineV2(object):
     @check_spider_pipeline
     def process_item(self, item, spider):
+        response = item['response']
         try:
-            response = item['response']
             logger.debug("start page: " + response.url)
             html = re.sub(r'\s\s+', ' ', response.text)
             new_response = HtmlResponse(url=response.url, body=html, encoding='utf8')
@@ -64,7 +64,7 @@ class WebsitePagePipelineV2(object):
                             break
             logger.debug("end page: " + response.url)
         except AttributeError as exc:
-            logger.error(str(exc))
+            logger.error("pipeline error: " + response.url + '-' + str(exc))
             pass
 
         return item

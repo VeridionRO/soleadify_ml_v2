@@ -69,7 +69,7 @@ class WebsiteSpider(scrapy.Spider):
             item = WebsitePageItem({'response': response})
             return item
         except AttributeError as exc:
-            logger.error(str(exc))
+            logger.error('error website: ' + self.website.link + '-' + str(exc))
             pass
 
     def _extract_requests(self, response):
