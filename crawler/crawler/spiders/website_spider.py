@@ -1,5 +1,8 @@
 import logging
 import socket
+
+import tldextract
+
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from scrapy.http import Request, HtmlResponse
@@ -16,7 +19,7 @@ logger = logging.getLogger('soleadify_ml')
 
 class WebsiteSpider(scrapy.Spider):
     name = 'WebsiteSpider'
-    allowed_domains = ['*']
+    allowed_domains = []
     start_urls = []
     pages = []
     pipeline = [WebsitePagePipelineV2]
@@ -29,8 +32,10 @@ class WebsiteSpider(scrapy.Spider):
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
     max_page = 400
+    priority_pages = {'team': 8, 'staff': 8, 'meet': 7, 'member': 6, 'detail': 5, 'directory': 4,
+                      'contact': 3, 'about': 2, 'find': 1}
 
-    def __init__(self, website_id, **kw):
+    def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
         super(WebsiteSpider, self).__init__(**kw)
 
@@ -38,9 +43,8 @@ class WebsiteSpider(scrapy.Spider):
         self.soc_spacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         connect(self.soc_spacy, '', settings.SPACY_PORT)
 
-        if self.website and self.website.contact_state == 'pending':
+        if self.website and (self.website.contact_state == 'pending' or force):
             self.url = self.website.link
-            self.allowed_domains = [self.website.domain]
             self.link_extractor = LinkExtractor()
 
             self.website.contact_state = 'working'
@@ -58,6 +62,11 @@ class WebsiteSpider(scrapy.Spider):
             return []
 
     def parse(self, response):
+        if len(self.allowed_domains) == 0:
+            self.allowed_domains.append(self.website.domain)
+            domain = tldextract.extract(str(response.request.url)).registered_domain
+            if domain not in self.allowed_domains:
+                self.allowed_domains.append(domain)
         page = self._get_item(response)
         r = [page]
         r.extend(self._extract_requests(response))
@@ -79,9 +88,7 @@ class WebsiteSpider(scrapy.Spider):
             def sort_links(current_link):
                 url = current_link.url.lower()
                 url_text = current_link.text
-                priority_pages = {'team': 8, 'staff': 8, 'meet': 7, 'member': 6, 'detail': 5, 'directory': 4,
-                                  'contact': 3, 'about': 2, 'find': 1}
-                for key, value in priority_pages.items():
+                for key, value in self.priority_pages.items():
                     if key in url or key in url_text:
                         return value
                 return 0
@@ -123,10 +130,13 @@ class WebsiteSpider(scrapy.Spider):
             logger.debug('end website: ' + self.website.link)
 
     def is_ignored(self, link):
-        if self.website.domain not in link.url:
-            return True
+        if len(self.allowed_domains) == 0:
+            return False
+        for domain in self.allowed_domains:
+            if domain in link.url:
+                for ignored in self.ignored_links:
+                    if ignored in link.url:
+                        return True
+                return False
 
-        for ignored in self.ignored_links:
-            if ignored in link.url:
-                return True
-        return False
+        return True
