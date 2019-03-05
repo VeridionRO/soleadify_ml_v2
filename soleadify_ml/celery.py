@@ -15,7 +15,7 @@ app.config_from_object('django.conf:settings')
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
-
+app.conf.task_default_queue = 'celery.fifo'
 
 app.conf.beat_schedule = {
     'add-every-30-seconds': {

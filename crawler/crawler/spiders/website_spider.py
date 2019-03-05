@@ -79,8 +79,8 @@ class WebsiteSpider(scrapy.Spider):
             def sort_links(current_link):
                 url = current_link.url.lower()
                 url_text = current_link.text
-                priority_pages = {'team': 8, 'meet': 7, 'member': 6, 'detail': 5, 'directory': 4, 'contact': 3,
-                                  'about': 2, 'find': 1}
+                priority_pages = {'team': 8, 'staff': 8, 'meet': 7, 'member': 6, 'detail': 5, 'directory': 4,
+                                  'contact': 3, 'about': 2, 'find': 1}
                 for key, value in priority_pages.items():
                     if key in url or key in url_text:
                         return value
