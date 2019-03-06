@@ -7,6 +7,7 @@ import functools
 import html2text
 import re
 import hashlib
+
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SocketUtils import recv_end
 
@@ -38,14 +39,17 @@ def get_text_from_element(element_html):
 
     page_text = converter.handle(element_html)
 
+    page_text = page_text.replace('(mailto:', ' ')
+    page_text = page_text.replace('mailto:', ' ')
     page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()_\'|]+', ' ', page_text)
     page_text = re.sub(r'(\s*\n\s*)+', '\n', page_text)
+    page_text = re.sub(r'\s\s+', ', ', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
 
     return page_text
 
 
-def get_person_from_element(spider, dom_element, previous_person=None, depth=1, page=''):
+def get_person_from_element(spider, person_name, dom_element, previous_person=None, depth=1, page=''):
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
@@ -88,30 +92,22 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
     else:
         parent = dom_element.getparent()
         if parent is not None:
-            return get_person_from_element(spider, parent, person, depth + 1, page)
+            return get_person_from_element(spider, person_name, parent, person, depth + 1, page)
 
 
 def enough_for_a_person(docs):
-    person = {}
+    contact = entities_to_contact(docs)
 
-    for ent in docs:
-        ent_text = ent['text']
-        ent_label = ent['label']
+    # this resolves the case when we are on the page of an person and on that page there is mention to another person
+    if 'PERSON' in contact and 1 < len(contact['PERSON']) <= 2 and 'EMAIL' in contact and len(contact['EMAIL']) == 1:
+        for person_name in contact['PERSON']:
+            possible_email = WebsiteContact.get_possible_email(person_name, contact['EMAIL'][0])
+            if possible_email:
+                contact['PERSON'] = [person_name]
+                break
 
-        if ent_label in ['TITLE', 'PERSON']:
-            ent_text = title_except(ent_text)
-
-        if ent['label'] == 'ORG':
-            continue
-
-        if ent_label in person:
-            if ent_text not in person[ent_label]:
-                person[ent_label].append(ent_text)
-        else:
-            person[ent_label] = [ent_text]
-
-    if valid_contact(person):
-        return person
+    if valid_contact(contact):
+        return contact
 
     return None
 
@@ -144,8 +140,8 @@ def get_ent(current_entity):
         if len(text) <= 7:
             return None
 
-    return {'label': current_entity.label_, 'text': text.strip().lower(), 'start': current_entity.start_char,
-            'end': current_entity.end_char}
+    return {'label': current_entity.label_, 'text': text.strip(), 'start': current_entity.start,
+            'end': current_entity.end}
 
 
 def title_except(s):
@@ -178,3 +174,63 @@ def valid_contact(contact, length=1):
             return False
 
     return True
+
+
+def process_secondary_contacts(docs):
+    current_contact = {}
+    secondary_contacts = []
+    previous_start = 0
+    previous_label = None
+    for current_entity in docs:
+        label = current_entity['label']
+        text = current_entity['text']
+        start = current_entity['start']
+
+        if start and current_entity['start'] - previous_start > 50:
+            if valid_contact(current_contact):
+                secondary_contacts.append(current_contact)
+            current_contact = {}
+
+        if label == 'PERSON' and label in current_contact:
+            name = current_contact['PERSON'][0][0]
+            if name != text and valid_contact(current_contact):
+                secondary_contacts.append(current_contact)
+                current_contact = {label: [(text, start)]}
+            elif name == text:
+                current_contact[label] = [(text, start)]
+        elif label in current_contact:
+            if previous_label != label and valid_contact(current_contact):
+                secondary_contacts.append(current_contact)
+                current_contact = {label: [(text, start)]}
+            else:
+                current_contact[label].append((text, start))
+        else:
+            current_contact[label] = [(text, start)]
+
+        previous_label = current_entity['label']
+        previous_start = current_entity['start']
+    if current_contact:
+        secondary_contacts.append(current_contact)
+
+    return secondary_contacts
+
+
+def entities_to_contact(entities):
+    contact = {}
+    for ent in entities:
+        ent_text = ent['text']
+        ent_label = ent['label']
+
+        if ent_label in ['TITLE', 'PERSON']:
+            ent_text = title_except(ent_text)
+
+        if ent['label'] == 'ORG':
+            continue
+
+        if ent_label in contact:
+            if ent_text not in contact[ent_label]:
+                contact[ent_label].append(ent_text)
+        else:
+            contact[ent_label] = [ent_text]
+
+    return contact

@@ -12,12 +12,15 @@ class TagLinkPipeline(object):
         import spacy
         spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
         doc = spacy_model(item['text'])
-        website_tags = {"content": item['text'], "annotation": [], "extras": None}
+        website_tags = {"content": item['text'], "annotation": [], "extras": None,
+                        "metadata": {"first_done_at": 1551870307000, "last_updated_at": 1551870307000, "sec_taken": 0,
+                                     "last_updated_by": "3BCYEQgDIHTFtTzwIy6Dpeowaae2",
+                                     "evaluation": "NONE"}}
 
         for ent in doc.ents:
             entity = {
                 "label": [ent.label_],
-                "points": [{"start": ent.start_char - 1, "end": ent.end_char, "text": ent.text}]
+                "points": [{"start": ent.start_char - 1, "end": ent.end_char - 1, "text": ent.text}]
             }
             website_tags["annotation"].append(entity)
 

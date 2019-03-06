@@ -2,6 +2,7 @@ import socket
 
 from django.conf import settings
 
+from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from crawler.items import WebsitePageItem
@@ -14,6 +15,7 @@ class CustomWebsiteSpider(scrapy.Spider):
     start_urls = []
     pipeline = [WebsitePagePipelineV2]
     contacts = {}
+    secondary_contacts = {}
     emails = []
     cached_docs = {}
 
@@ -31,4 +33,14 @@ class CustomWebsiteSpider(scrapy.Spider):
 
     def close(self, spider):
         for key, contact in self.contacts.items():
+            for email in self.emails:
+                if 'EMAIL' in contact:
+                    break
+                possible_email = WebsiteContact.get_possible_email(contact['PERSON'], email)
+                if possible_email:
+                    contact['EMAIL'] = [possible_email['email']]
             print(contact)
+        print('---secondary---')
+        for key, contact in self.secondary_contacts.items():
+            if key not in self.contacts:
+                print(contact)

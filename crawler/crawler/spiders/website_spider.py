@@ -11,7 +11,6 @@ from django.conf import settings
 from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
 from soleadify_ml.models.website import Website
-from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
 from soleadify_ml.models.website_contact import WebsiteContact
 
 logger = logging.getLogger('soleadify_ml')
@@ -24,6 +23,7 @@ class WebsiteSpider(scrapy.Spider):
     pages = []
     pipeline = [WebsitePagePipelineV2]
     contacts = {}
+    secondary_contacts = {}
     website = None
     soc_spacy = None
     url = None
@@ -105,23 +105,20 @@ class WebsiteSpider(scrapy.Spider):
         return r
 
     def close(self, spider):
-        metas = {}
         for key, contact in self.contacts.items():
             for email in self.emails:
-                WebsiteContact.attach_email(contact, email)
+                if 'EMAIL' in contact:
+                    break
+                possible_email = WebsiteContact.get_possible_email(contact['PERSON'], email)
+                if possible_email:
+                    contact['EMAIL'] = [possible_email['email']]
 
-            url = contact['URL']
-            website_contact = self.website.extract_contact(contact)
-            if not website_contact.id:
-                website_contact.save()
-            for _type, items in contact.items():
-                for item in items:
-                    key = str(website_contact.id) + str(_type) + str(item)
-                    website_contact_meta = WebsiteContactMeta(website_contact_id=website_contact.id, meta_key=_type,
-                                                              meta_value=item, page=url)
-                    website_contact_meta.update_phone_value(self.website.get_country_code())
-                    metas[key] = website_contact_meta
-            WebsiteContactMeta.objects.bulk_create(metas.values(), ignore_conflicts=True)
+            WebsiteContact.save_contact(self.website, contact)
+
+        for key, contact in self.secondary_contacts.items():
+            if key in self.contacts:
+                continue
+            WebsiteContact.save_contact(self.website, contact, 0)
 
         if self.url:
             self.website.contact_state = 'finished'

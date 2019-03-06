@@ -1,8 +1,11 @@
 import hashlib
+import re
 
 from django.db import models
 import probablepeople as pp
 from email_split import email_split
+
+from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
 
 
 class WebsiteContact(models.Model):
@@ -17,15 +20,18 @@ class WebsiteContact(models.Model):
         db_table = 'website_contacts'
 
     @staticmethod
-    def add_contact(contact, spider, from_tuple=True):
+    def add_contact(contact, contacts, spider, from_tuple=True):
         new_contact = {}
         if from_tuple:
             for key, contact_part in contact.items():
+                if key == 'URL':
+                    continue
                 new_contact[key] = [value[0] for value in contact_part]
         else:
             new_contact = contact
 
         name = new_contact['PERSON'][0]
+        new_contact['URL'] = contact['URL']
         new_contact['PERSON'] = name.title()
         split_name_parts = pp.parse(name)
         name_key = WebsiteContact.get_name_key(name)
@@ -49,31 +55,36 @@ class WebsiteContact(models.Model):
             if split_name_part[1] in ['GivenName', 'Surname', 'MiddleName']:
                 new_contact[split_name_part[1]] = split_name_part[0].lower()
 
-        if name_key in spider.contacts:
-            WebsiteContact.merge_dicts(spider.contacts[name_key], new_contact)
+        if name_key in contacts:
+            WebsiteContact.merge_dicts(contacts[name_key], new_contact)
         else:
-            spider.contacts[name_key] = new_contact
+            contacts[name_key] = new_contact
 
         important_keys = ['PERSON', 'EMAIL', 'PHONE']
         contact_keys = new_contact.keys()
         important_keys_intersection = list(set(important_keys) & set(contact_keys))
 
         if len(important_keys_intersection) >= 3:
-            spider.contacts[name_key]['DONE'] = True
+            contacts[name_key]['DONE'] = True
         else:
-            spider.contacts[name_key]['DONE'] = False
+            contacts[name_key]['DONE'] = False
 
-        return spider.contacts[name_key]
+        return contacts[name_key]
 
     @staticmethod
-    def attach_email(contact, email):
+    def get_possible_email(contact_name, email):
+        split_name_parts = pp.parse(contact_name)
+        given_name = ''
+        surname = ''
+        for split_name_part in split_name_parts:
+            if split_name_part[1] == 'Surname':
+                surname = split_name_part[0].lower()
+            if split_name_part[1] == 'GivenName':
+                given_name = split_name_part[0].lower()
         email = email.lower()
         email_parts = email_split(email)
         possible_emails = {}
-        pattern = None
         domain = email_parts.domain
-        surname = contact['Surname'].lower() if 'Surname' in contact else ''
-        given_name = contact['GivenName'].lower() if 'GivenName' in contact else ''
         surname_first_letter = surname[0] if len(surname) else ''
         given_name_first_letter = given_name[0] if len(given_name) else ''
 
@@ -107,11 +118,9 @@ class WebsiteContact(models.Model):
         for possible_pattern, possible_email in possible_emails.items():
             if possible_email == email:
                 pattern = possible_pattern
-                contact['EMAIL'] = [possible_email]
+                return {'pattern': pattern, 'email': possible_email}
 
-                break
-
-        return pattern
+        return None
 
     @staticmethod
     def merge_dicts(dic1, dic2):
@@ -125,4 +134,21 @@ class WebsiteContact(models.Model):
 
     @staticmethod
     def get_name_key(name):
+        name = re.sub(r'[^a-zA-Z]+', '', name)
         return hashlib.md5(name.encode()).hexdigest()
+
+    @staticmethod
+    def save_contact(website, contact, score=10):
+        metas = {}
+        url = contact['URL']
+        website_contact = website.extract_contact(contact)
+        if not website_contact.id:
+            website_contact.save()
+        for _type, items in contact.items():
+            for item in items:
+                key = str(website_contact.id) + str(_type) + str(item)
+                website_contact_meta = WebsiteContactMeta(website_contact_id=website_contact.id, meta_key=_type,
+                                                          meta_value=item, page=url, score=score)
+                website_contact_meta.update_phone_value(website.get_country_code())
+                metas[key] = website_contact_meta
+        WebsiteContactMeta.objects.bulk_create(metas.values(), ignore_conflicts=True)
