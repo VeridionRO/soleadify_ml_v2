@@ -1,11 +1,8 @@
 import hashlib
 import re
-
 from django.db import models
-import probablepeople as pp
-from email_split import email_split
-
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
+from soleadify_ml.utils.SpiderUtils import pp_contact_name
 
 
 class WebsiteContact(models.Model):
@@ -33,7 +30,6 @@ class WebsiteContact(models.Model):
         name = new_contact['PERSON'][0]
         new_contact['URL'] = contact['URL']
         new_contact['PERSON'] = name.title()
-        split_name_parts = pp.parse(name)
         name_key = WebsiteContact.get_name_key(name)
 
         if 'EMAIL' in new_contact:
@@ -50,10 +46,6 @@ class WebsiteContact(models.Model):
                 new_titles.append(job_title)
                 pass
             new_contact['TITLE'] = new_titles
-
-        for split_name_part in split_name_parts:
-            if split_name_part[1] in ['GivenName', 'Surname', 'MiddleName']:
-                new_contact[split_name_part[1]] = split_name_part[0].lower()
 
         if name_key in contacts:
             WebsiteContact.merge_dicts(contacts[name_key], new_contact)
@@ -72,57 +64,6 @@ class WebsiteContact(models.Model):
         return contacts[name_key]
 
     @staticmethod
-    def get_possible_email(contact_name, email):
-        split_name_parts = pp.parse(contact_name)
-        given_name = ''
-        surname = ''
-        for split_name_part in split_name_parts:
-            if split_name_part[1] == 'Surname':
-                surname = split_name_part[0].lower()
-            if split_name_part[1] == 'GivenName':
-                given_name = split_name_part[0].lower()
-        email = email.lower()
-        email_parts = email_split(email)
-        possible_emails = {}
-        domain = email_parts.domain
-        surname_first_letter = surname[0] if len(surname) else ''
-        given_name_first_letter = given_name[0] if len(given_name) else ''
-
-        possible_emails['surname'] = "%s@%s" % (surname, domain)
-        possible_emails['given_name'] = "%s@%s" % (given_name, domain)
-        possible_emails['given_name|surname'] = "%s%s@%s" % (given_name, surname, domain)
-        possible_emails['given_name|.|surname'] = "%s.%s@%s" % (given_name, surname, domain)
-        possible_emails['given_name|-|surname'] = "%s-%s@%s" % (given_name, surname, domain)
-        possible_emails['given_name|_|surname'] = "%s_%s@%s" % (given_name, surname, domain)
-        possible_emails['surname|given_name'] = "%s%s@%s" % (given_name, surname, domain)
-        possible_emails['surname|.|given_name'] = "%s.%s@%s" % (surname, given_name, domain)
-        possible_emails['surname|-|given_name'] = "%s-%s@%s" % (surname, given_name, domain)
-        possible_emails['surname|_|given_name'] = "%s_%s@%s" % (surname, given_name, domain)
-        possible_emails['surname0|.|given_name'] = "%s.%s@%s" % (surname_first_letter, given_name, domain)
-        possible_emails['surname0|given_name'] = "%s%s@%s" % (surname_first_letter, given_name, domain)
-        possible_emails['surname0|-|given_name'] = "%s-%s@%s" % (surname_first_letter, given_name, domain)
-        possible_emails['surname0|_|given_name'] = "%s_%s@%s" % (surname_first_letter, given_name, domain)
-        possible_emails['given_name0|.|surname'] = "%s.%s@%s" % (given_name_first_letter, surname, domain)
-        possible_emails['given_name0|surname'] = "%s%s@%s" % (given_name_first_letter, surname, domain)
-        possible_emails['given_name0|-|surname'] = "%s-%s@%s" % (given_name_first_letter, surname, domain)
-        possible_emails['given_name0|_|surname'] = "%s_%s@%s" % (given_name_first_letter, surname, domain)
-        possible_emails['given_name|.|surname0'] = "%s.%s@%s" % (given_name, surname_first_letter, domain)
-        possible_emails['given_name|surname0'] = "%s%s@%s" % (given_name, surname_first_letter, domain)
-        possible_emails['given_name|-|surname0'] = "%s-%s@%s" % (given_name, surname_first_letter, domain)
-        possible_emails['given_name|_|surname0'] = "%s_%s@%s" % (given_name, surname_first_letter, domain)
-        possible_emails['surname|.|given_name0'] = "%s.%s@%s" % (surname, given_name_first_letter, domain)
-        possible_emails['|surname|given_name0'] = "%s%s@%s" % (surname, given_name_first_letter, domain)
-        possible_emails['surname|-|given_name0'] = "%s-%s@%s" % (surname, given_name_first_letter, domain)
-        possible_emails['surname|_|given_name0'] = "%s_%s@%s" % (surname, given_name_first_letter, domain)
-
-        for possible_pattern, possible_email in possible_emails.items():
-            if possible_email == email:
-                pattern = possible_pattern
-                return {'pattern': pattern, 'email': possible_email}
-
-        return None
-
-    @staticmethod
     def merge_dicts(dic1, dic2):
         for key, values in dic2.items():
             if key in ['ORG', 'TITLE', 'EMAIL', 'PHONE']:
@@ -134,8 +75,17 @@ class WebsiteContact(models.Model):
 
     @staticmethod
     def get_name_key(name):
-        name = re.sub(r'[^a-zA-Z]+', '', name)
-        return hashlib.md5(name.encode()).hexdigest()
+        pp_name = pp_contact_name({'PERSON': name})
+        name_key = ''
+
+        if 'GivenName' in pp_name:
+            name_key += pp_name['GivenName']
+
+        if 'Surname' in pp_name:
+            name_key += pp_name['Surname']
+
+        name_key = re.sub(r'[^a-zA-Z]+', '', name_key)
+        return hashlib.md5(name_key.encode()).hexdigest()
 
     @staticmethod
     def save_contact(website, contact, score=10):

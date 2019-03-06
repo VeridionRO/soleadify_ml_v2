@@ -2,13 +2,14 @@ import json
 import logging
 from datetime import time
 import time
+
+from email_split import email_split
 from lxml import etree
 import functools
 import html2text
 import re
 import hashlib
-
-from soleadify_ml.models.website_contact import WebsiteContact
+import probablepeople as pp
 from soleadify_ml.utils.SocketUtils import recv_end
 
 logger = logging.getLogger('soleadify_ml')
@@ -100,11 +101,43 @@ def enough_for_a_person(docs):
 
     # this resolves the case when we are on the page of an person and on that page there is mention to another person
     if 'PERSON' in contact and 1 < len(contact['PERSON']) <= 2 and 'EMAIL' in contact and len(contact['EMAIL']) == 1:
-        for person_name in contact['PERSON']:
-            possible_email = WebsiteContact.get_possible_email(person_name, contact['EMAIL'][0])
+        for contact_name in contact['PERSON']:
+            possible_email = get_possible_email(contact_name, contact['EMAIL'][0])
             if possible_email:
-                contact['PERSON'] = [person_name]
+                contact['PERSON'] = [contact_name]
                 break
+
+    if 'PERSON' in contact and len(contact['PERSON']) >= 2:
+        new_contact_names = []
+        contact_name_2 = None
+        for contact_name in contact['PERSON']:
+            duplicate = False
+            if len(contact_name.split()) <= 1:
+                continue
+            for contact_name_2 in contact['PERSON']:
+                if contact_name == contact_name_2:
+                    continue
+
+                name_keys = ['GivenName', 'Surname']
+                pp_name = pp_contact_name({'PERSON': contact_name})
+                pp_name_2 = pp_contact_name({'PERSON': contact_name_2})
+
+                pp_name_keys = list(set(name_keys) & set(pp_name.keys()))
+                pp_name_2_keys = list(set(name_keys) & set(pp_name_2.keys()))
+
+                if len(pp_name_keys) > 1 and len(pp_name_2_keys) > 1 and \
+                        pp_name['GivenName'] == pp_name_2['GivenName'] and pp_name['Surname'] == pp_name_2['Surname']:
+                    duplicate = True
+                    break
+            if not duplicate:
+                new_contact_names.append(contact_name)
+            else:
+                new_contact_name = contact_name if len(contact_name) > len(contact_name_2) else contact_name_2
+                if new_contact_name not in new_contact_names:
+                    new_contact_names.append(new_contact_name)
+
+        if len(new_contact_names) > 0:
+            contact['PERSON'] = new_contact_names
 
     if valid_contact(contact):
         return contact
@@ -186,7 +219,7 @@ def process_secondary_contacts(docs):
         text = current_entity['text']
         start = current_entity['start']
 
-        if start and current_entity['start'] - previous_start > 50:
+        if start and current_entity['start'] - previous_start > 30:
             if valid_contact(current_contact):
                 secondary_contacts.append(current_contact)
             current_contact = {}
@@ -234,3 +267,62 @@ def entities_to_contact(entities):
             contact[ent_label] = [ent_text]
 
     return contact
+
+
+def pp_contact_name(contact):
+    split_name_parts = pp.parse(contact['PERSON'])
+    for split_name_part in split_name_parts:
+        if split_name_part[1] in ['GivenName', 'Surname', 'MiddleName']:
+            contact[split_name_part[1]] = split_name_part[0].lower()
+    return contact
+
+
+def get_possible_email(contact_name, email):
+    split_name_parts = pp.parse(contact_name)
+    given_name = ''
+    surname = ''
+    for split_name_part in split_name_parts:
+        if split_name_part[1] == 'Surname':
+            surname = split_name_part[0].lower()
+        if split_name_part[1] == 'GivenName':
+            given_name = split_name_part[0].lower()
+    email = email.lower()
+    email_parts = email_split(email)
+    possible_emails = {}
+    domain = email_parts.domain
+    surname_first_letter = surname[0] if len(surname) else ''
+    given_name_first_letter = given_name[0] if len(given_name) else ''
+
+    possible_emails['surname'] = "%s@%s" % (surname, domain)
+    possible_emails['given_name'] = "%s@%s" % (given_name, domain)
+    possible_emails['given_name|surname'] = "%s%s@%s" % (given_name, surname, domain)
+    possible_emails['given_name|.|surname'] = "%s.%s@%s" % (given_name, surname, domain)
+    possible_emails['given_name|-|surname'] = "%s-%s@%s" % (given_name, surname, domain)
+    possible_emails['given_name|_|surname'] = "%s_%s@%s" % (given_name, surname, domain)
+    possible_emails['surname|given_name'] = "%s%s@%s" % (given_name, surname, domain)
+    possible_emails['surname|.|given_name'] = "%s.%s@%s" % (surname, given_name, domain)
+    possible_emails['surname|-|given_name'] = "%s-%s@%s" % (surname, given_name, domain)
+    possible_emails['surname|_|given_name'] = "%s_%s@%s" % (surname, given_name, domain)
+    possible_emails['surname0|.|given_name'] = "%s.%s@%s" % (surname_first_letter, given_name, domain)
+    possible_emails['surname0|given_name'] = "%s%s@%s" % (surname_first_letter, given_name, domain)
+    possible_emails['surname0|-|given_name'] = "%s-%s@%s" % (surname_first_letter, given_name, domain)
+    possible_emails['surname0|_|given_name'] = "%s_%s@%s" % (surname_first_letter, given_name, domain)
+    possible_emails['given_name0|.|surname'] = "%s.%s@%s" % (given_name_first_letter, surname, domain)
+    possible_emails['given_name0|surname'] = "%s%s@%s" % (given_name_first_letter, surname, domain)
+    possible_emails['given_name0|-|surname'] = "%s-%s@%s" % (given_name_first_letter, surname, domain)
+    possible_emails['given_name0|_|surname'] = "%s_%s@%s" % (given_name_first_letter, surname, domain)
+    possible_emails['given_name|.|surname0'] = "%s.%s@%s" % (given_name, surname_first_letter, domain)
+    possible_emails['given_name|surname0'] = "%s%s@%s" % (given_name, surname_first_letter, domain)
+    possible_emails['given_name|-|surname0'] = "%s-%s@%s" % (given_name, surname_first_letter, domain)
+    possible_emails['given_name|_|surname0'] = "%s_%s@%s" % (given_name, surname_first_letter, domain)
+    possible_emails['surname|.|given_name0'] = "%s.%s@%s" % (surname, given_name_first_letter, domain)
+    possible_emails['|surname|given_name0'] = "%s%s@%s" % (surname, given_name_first_letter, domain)
+    possible_emails['surname|-|given_name0'] = "%s-%s@%s" % (surname, given_name_first_letter, domain)
+    possible_emails['surname|_|given_name0'] = "%s_%s@%s" % (surname, given_name_first_letter, domain)
+
+    for possible_pattern, possible_email in possible_emails.items():
+        if possible_email == email:
+            pattern = possible_pattern
+            return {'pattern': pattern, 'email': possible_email}
+
+    return None

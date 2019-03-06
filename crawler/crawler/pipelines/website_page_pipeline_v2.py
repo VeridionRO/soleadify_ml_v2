@@ -3,7 +3,7 @@ import json
 import re
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
-    valid_contact, process_secondary_contacts
+    valid_contact, process_secondary_contacts, pp_contact_name
 from soleadify_ml.utils.SocketUtils import recv_end
 from scrapy.http import HtmlResponse
 

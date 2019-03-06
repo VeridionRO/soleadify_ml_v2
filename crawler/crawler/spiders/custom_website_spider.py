@@ -2,11 +2,11 @@ import socket
 
 from django.conf import settings
 
-from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
+from soleadify_ml.utils.SpiderUtils import get_possible_email
 
 
 class CustomWebsiteSpider(scrapy.Spider):
@@ -36,7 +36,7 @@ class CustomWebsiteSpider(scrapy.Spider):
             for email in self.emails:
                 if 'EMAIL' in contact:
                     break
-                possible_email = WebsiteContact.get_possible_email(contact['PERSON'], email)
+                possible_email = get_possible_email(contact['PERSON'], email)
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
             print(contact)

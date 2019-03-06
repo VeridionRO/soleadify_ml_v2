@@ -109,7 +109,7 @@ class WebsiteSpider(scrapy.Spider):
             for email in self.emails:
                 if 'EMAIL' in contact:
                     break
-                possible_email = WebsiteContact.get_possible_email(contact['PERSON'], email)
+                possible_email = get_possible_email(contact['PERSON'], email)
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
 
