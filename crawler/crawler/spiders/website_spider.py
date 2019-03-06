@@ -31,7 +31,7 @@ class WebsiteSpider(scrapy.Spider):
     cached_links = {}
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
-    max_page = 400
+    max_page = 500
 
     def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
