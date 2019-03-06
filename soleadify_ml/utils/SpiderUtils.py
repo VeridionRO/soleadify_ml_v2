@@ -77,7 +77,7 @@ def get_person_from_element(spider, dom_element, previous_person=None, depth=1, 
 
     person = enough_for_a_person(docs)
 
-    if person and WebsiteContact.valid_contact(person, 4):
+    if person and valid_contact(person, 4):
         return person
 
     if depth > 4:
@@ -96,16 +96,21 @@ def enough_for_a_person(docs):
 
     for ent in docs:
         ent_text = ent['text']
+        ent_label = ent['label']
+
+        if ent_label in ['TITLE', 'PERSON']:
+            ent_text = title_except(ent_text)
 
         if ent['label'] == 'ORG':
             continue
 
-        if ent['label'] in person:
-            person[ent['label']].append(ent_text)
+        if ent_label in person:
+            if ent_text not in person[ent_label]:
+                person[ent_label].append(ent_text)
         else:
-            person[ent['label']] = [ent_text]
+            person[ent_label] = [ent_text]
 
-    if WebsiteContact.valid_contact(person):
+    if valid_contact(person):
         return person
 
     return None
@@ -120,6 +125,10 @@ def is_phone_getter(token):
 
 
 def get_ent(current_entity):
+    text = current_entity.text
+    if len(text) <= 2:
+        return None
+
     if current_entity.label_ == 'ORG':
         return None
 
@@ -128,8 +137,44 @@ def get_ent(current_entity):
             return None
 
     if current_entity.label_ == 'PHONE':
+        text = re.sub('\D', '', text)
         if not current_entity._.get('is_phone'):
             return None
 
-    return {'label': current_entity.label_, 'text': current_entity.text, 'start': current_entity.start_char,
+        if len(text) <= 7:
+            return None
+
+    return {'label': current_entity.label_, 'text': text.strip().lower(), 'start': current_entity.start_char,
             'end': current_entity.end_char}
+
+
+def title_except(s):
+    exceptions = ['a', 'an', 'of', 'the', 'is']
+    word_list = re.split(' ', s)  # re.split behaves as expected
+    final = [word_list[0].capitalize()]
+    for word in word_list[1:]:
+        final.append(word if word in exceptions else word.capitalize())
+    return " ".join(final)
+
+
+def valid_contact(contact, length=1):
+    """
+    check if a contact array is valid
+    :param contact:
+    :param length:
+    :return:
+    """
+    important_keys = ['PERSON', 'TITLE', 'EMAIL', 'PHONE']
+    contact_keys = contact.keys()
+    important_keys_intersection = list(set(important_keys) & set(contact_keys))
+
+    if len(important_keys_intersection) <= length:
+        return False
+
+    if 'PERSON' not in contact:
+        return False
+    else:
+        if len(contact['PERSON']) > 1:
+            return False
+
+    return True

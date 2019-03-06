@@ -32,8 +32,6 @@ class WebsiteSpider(scrapy.Spider):
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
     max_page = 400
-    priority_pages = {'team': 8, 'staff': 8, 'meet': 7, 'member': 6, 'detail': 5, 'directory': 4,
-                      'contact': 3, 'about': 2, 'find': 1}
 
     def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
@@ -84,11 +82,13 @@ class WebsiteSpider(scrapy.Spider):
     def _extract_requests(self, response):
         r = []
         parsed_links = []
+        priority_pages = {'team': 8, 'staff': 8, 'people': 8, 'meet': 7, 'member': 6, 'detail': 5, 'directory': 4,
+                          'contact': 3, 'about': 2, 'find': 1}
         if isinstance(response, HtmlResponse):
             def sort_links(current_link):
                 url = current_link.url.lower()
                 url_text = current_link.text
-                for key, value in self.priority_pages.items():
+                for key, value in priority_pages.items():
                     if key in url or key in url_text:
                         return value
                 return 0

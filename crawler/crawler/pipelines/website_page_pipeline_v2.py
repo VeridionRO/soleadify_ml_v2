@@ -2,7 +2,8 @@ import logging
 import json
 import re
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element
+from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
+    valid_contact
 from soleadify_ml.utils.SocketUtils import recv_end
 from scrapy.http import HtmlResponse
 
@@ -31,6 +32,9 @@ class WebsitePagePipelineV2(object):
             has_two_person = False
 
             for ent in docs:
+                if ent['label'] == 'EMAIL':
+                    if ent['text'] not in spider.emails:
+                        spider.emails.append(ent['text'])
                 if ent['label'] == 'ORG':
                     continue
                 if ent['label'] == 'PERSON':
@@ -55,7 +59,7 @@ class WebsitePagePipelineV2(object):
                 person_elements = new_response.xpath('//*[contains(text(),"%s")]' % person_name)
                 for person_element in person_elements:
                     person = get_person_from_element(spider, person_element.root, page=response.url)
-                    if person and WebsiteContact.valid_contact(person):
+                    if person and valid_contact(person):
                         person['URL'] = response.url
                         logger.debug(json.dumps(person))
                         new_contact = WebsiteContact.add_contact(person, spider, False)

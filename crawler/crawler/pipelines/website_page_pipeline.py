@@ -1,6 +1,6 @@
 import re
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import check_spider_pipeline
+from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, valid_contact
 
 
 class WebsitePagePipeline(object):
@@ -33,7 +33,7 @@ class WebsitePagePipeline(object):
 
         for current_entity in current_entities:
             if start and current_entity[2] - start > 200:
-                if WebsiteContact.valid_contact(current_contact):
+                if valid_contact(current_contact):
                     WebsiteContact.add_contact(current_contact, spider.contacts, spider.emails)
                 current_contact = {}
 
@@ -43,7 +43,7 @@ class WebsitePagePipeline(object):
 
             if label == 'PERSON' and label in current_contact:
                 name = current_contact['PERSON'][0][0]
-                if name != text and WebsiteContact.valid_contact(current_contact):
+                if name != text and valid_contact(current_contact):
                     WebsiteContact.add_contact(current_contact, spider.contacts, spider.emails)
                     current_contact = {label: [(text, start)]}
                 elif name == text:
@@ -59,7 +59,7 @@ class WebsitePagePipeline(object):
             else:
                 current_contact[label] = [(text, start)]
 
-        if WebsiteContact.valid_contact(current_contact):
+        if valid_contact(current_contact):
             WebsiteContact.add_contact(current_contact, spider.contacts, spider.emails)
 
         return item

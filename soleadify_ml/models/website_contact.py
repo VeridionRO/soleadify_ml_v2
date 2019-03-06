@@ -17,29 +17,6 @@ class WebsiteContact(models.Model):
         db_table = 'website_contacts'
 
     @staticmethod
-    def valid_contact(contact, length=1):
-        """
-        check if a contact array is valid
-        :param contact:
-        :param length:
-        :return:
-        """
-        important_keys = ['PERSON', 'TITLE', 'EMAIL', 'PHONE']
-        contact_keys = contact.keys()
-        important_keys_intersection = list(set(important_keys) & set(contact_keys))
-
-        if len(important_keys_intersection) <= length:
-            return False
-
-        if 'PERSON' not in contact:
-            return False
-        else:
-            if len(contact['PERSON']) > 1:
-                return False
-
-        return True
-
-    @staticmethod
     def add_contact(contact, spider, from_tuple=True):
         new_contact = {}
         if from_tuple:
@@ -49,7 +26,7 @@ class WebsiteContact(models.Model):
             new_contact = contact
 
         name = new_contact['PERSON'][0]
-        new_contact['PERSON'] = name
+        new_contact['PERSON'] = name.title()
         split_name_parts = pp.parse(name)
         name_key = WebsiteContact.get_name_key(name)
 
@@ -59,6 +36,14 @@ class WebsiteContact(models.Model):
             for email in emails:
                 if email in spider.emails:
                     spider.emails.remove(email)
+
+        if 'TITLE' in new_contact:
+            titles = new_contact['TITLE']
+            new_titles = []
+            for job_title in titles:
+                new_titles.append(job_title)
+                pass
+            new_contact['TITLE'] = new_titles
 
         for split_name_part in split_name_parts:
             if split_name_part[1] in ['GivenName', 'Surname', 'MiddleName']:

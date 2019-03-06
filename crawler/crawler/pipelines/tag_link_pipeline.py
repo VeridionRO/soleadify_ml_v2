@@ -17,7 +17,7 @@ class TagLinkPipeline(object):
         for ent in doc.ents:
             entity = {
                 "label": [ent.label_],
-                "points": [{"start": ent.start_char - 1, "end": ent.end_char - 1, "text": ent.text}]
+                "points": [{"start": ent.start_char - 1, "end": ent.end_char, "text": ent.text}]
             }
             website_tags["annotation"].append(entity)
 
