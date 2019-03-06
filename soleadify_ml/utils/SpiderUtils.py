@@ -186,16 +186,23 @@ def title_except(s):
     return " ".join(final)
 
 
-def valid_contact(contact, length=1):
+def valid_contact(contact, length=1, has_contact=False):
     """
     check if a contact array is valid
     :param contact:
     :param length:
+    :param has_contact:
     :return:
     """
     important_keys = ['PERSON', 'TITLE', 'EMAIL', 'PHONE']
+    has_contacts_keys = ['EMAIL', 'PHONE']
     contact_keys = contact.keys()
     important_keys_intersection = list(set(important_keys) & set(contact_keys))
+
+    if has_contact:
+        has_contact_keys_intersection = list(set(contact_keys) & set(has_contacts_keys))
+        if len(has_contact_keys_intersection) == 0:
+            return False
 
     if len(important_keys_intersection) <= length:
         return False
