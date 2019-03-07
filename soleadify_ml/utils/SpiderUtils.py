@@ -59,7 +59,8 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
     docs = []
     t1 = time.time()
     required_no = 2 if (depth >= 4) else 1
-
+    # Jake Adams, 615.726.5631, jadams@bakerdonelson.com
+    # Linda S. Finley, 404.589.3408, lfinley@bakerdonelson.com
     try:
         if dom_element_text_key in spider.cached_docs:
             docs = spider.cached_docs[dom_element_text_key]
@@ -114,9 +115,11 @@ def enough_for_a_person(docs, contact_name):
         possible_email = get_possible_email(contact_name, contact['EMAIL'][0])
         if possible_email:
             contact['PERSON'] = [contact_name]
+            contact['EMAIL'] = [contact['EMAIL'][0]]
 
     if 'PERSON' in contact and len(contact['PERSON']) >= 2:
         new_contact_names = []
+        duplicate = False
         for contact_name_2 in contact['PERSON']:
             if contact_name == contact_name_2:
                 continue
@@ -133,7 +136,10 @@ def enough_for_a_person(docs, contact_name):
                 new_contact_name = contact_name if len(contact_name) > len(contact_name_2) else contact_name_2
                 if new_contact_name not in new_contact_names:
                     new_contact_names.append(contact_name)
+                    duplicate = True
             else:
+                new_contact_names.append(contact_name_2)
+            if not duplicate:
                 new_contact_names.append(contact_name)
 
         if len(new_contact_names) > 0:
