@@ -3,7 +3,7 @@ import json
 import re
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
-    valid_contact, process_secondary_contacts, pp_contact_name
+    valid_contact, pp_contact_name
 from soleadify_ml.utils.SocketUtils import recv_end
 from scrapy.http import HtmlResponse
 
@@ -14,6 +14,13 @@ class WebsitePagePipelineV2(object):
     @check_spider_pipeline
     def process_item(self, item, spider):
         response = item['response']
+
+        try:
+            if not spider.is_linked_allowed(response.url):
+                return []
+        except AttributeError:
+            pass
+
         try:
             logger.debug("start page: " + response.url)
             html = re.sub(r'\s\s+', ' ', response.text)
@@ -36,6 +43,7 @@ class WebsitePagePipelineV2(object):
                     if ent['text'] not in spider.emails:
                         spider.emails.append(ent['text'])
                 if ent['label'] == 'ORG':
+                    spider.organizations.append(ent['text'])
                     continue
                 if ent['label'] == 'PERSON':
                     if ent['text'] != previous_person:

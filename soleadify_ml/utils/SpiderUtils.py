@@ -161,9 +161,6 @@ def get_ent(current_entity):
     if len(text) <= 2:
         return None
 
-    if current_entity.label_ == 'ORG':
-        return None
-
     if current_entity.label_ == 'EMAIL':
         if not current_entity.root.like_email:
             return None

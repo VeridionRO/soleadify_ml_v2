@@ -17,6 +17,7 @@ class CustomWebsiteSpider(scrapy.Spider):
     contacts = {}
     secondary_contacts = {}
     emails = []
+    organizations = []
     cached_docs = {}
 
     def __init__(self, link, **kwargs):

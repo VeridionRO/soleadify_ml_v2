@@ -1,8 +1,10 @@
 import logging
 import socket
+from collections import Counter
 
 import tldextract
 
+from soleadify_ml.models.website_meta import WebsiteMeta
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from scrapy.http import Request, HtmlResponse
@@ -33,6 +35,7 @@ class WebsiteSpider(scrapy.Spider):
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
     max_page = 500
+    organizations = []
 
     def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
@@ -72,6 +75,13 @@ class WebsiteSpider(scrapy.Spider):
 
         return r
 
+    def is_linked_allowed(self, link):
+        if len(self.allowed_domains) > 0:
+            domain = tldextract.extract(link).registered_domain
+            if domain in self.allowed_domains:
+                return True
+        return False
+
     def _get_item(self, response):
         try:
             item = WebsitePageItem({'response': response})
@@ -106,6 +116,7 @@ class WebsiteSpider(scrapy.Spider):
         return r
 
     def close(self, spider):
+        most_common_org = Counter(self.organizations).most_common(3)
         for key, contact in self.contacts.items():
             for email in self.emails:
                 if 'EMAIL' in contact:
@@ -120,6 +131,13 @@ class WebsiteSpider(scrapy.Spider):
             if key in self.contacts:
                 continue
             WebsiteContact.save_contact(self.website, contact, 0)
+
+        db_organizations = []
+        for org in most_common_org:
+            website_meta = WebsiteMeta(website_id=self.website.id, meta_key='ORGANIZATION', meta_value=org[0],
+                                       count=org[1])
+            db_organizations.append(website_meta)
+        WebsiteMeta.objects.bulk_create(db_organizations, ignore_conflicts=True)
 
         if self.url:
             self.website.contact_state = 'finished'
