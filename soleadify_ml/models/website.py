@@ -4,6 +4,7 @@ from django.db.models import Count
 from soleadify_ml.models.website_page import WebsitePage
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.models.website_location import WebsiteLocation
+from soleadify_ml.utils.SpiderUtils import pp_contact_name
 
 
 class Website(models.Model):
@@ -32,6 +33,7 @@ class Website(models.Model):
 
     def extract_contact(self, dirty_contact):
         website_contact = WebsiteContact.objects.filter(website_id=self.id, name=dirty_contact['PERSON']).first()
+        pp_contact_name(dirty_contact)
         if not website_contact:
             website_contact = WebsiteContact(
                 website_id=self.id, name=dirty_contact['PERSON'],

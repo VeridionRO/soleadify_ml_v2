@@ -42,11 +42,9 @@ class WebsitePagePipelineV2(object):
                     if ent['text'] != previous_person:
                         consecutive_persons += 1
 
-                        if consecutive_persons == 3:
+                        if consecutive_persons >= 3:
                             person_names = list(filter(lambda a: a != previous_person, person_names))
-                            consecutive_persons = 0
-                        else:
-                            person_names.append(ent['text'])
+                        person_names.append(ent['text'])
                         previous_person = ent['text']
 
                 else:
