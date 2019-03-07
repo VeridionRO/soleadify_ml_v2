@@ -236,21 +236,21 @@ def process_secondary_contacts(docs):
         text = current_entity['text']
         start = current_entity['start']
 
-        if start and current_entity['start'] - previous_start > 20:
-            if valid_contact(current_contact):
+        if start and current_entity['start'] - previous_start > 30:
+            if valid_contact(current_contact, 2):
                 secondary_contacts.append(current_contact)
             current_contact = {}
 
         if label == 'PERSON' and label in current_contact:
             name = current_contact['PERSON'][0][0]
-            if name != text and valid_contact(current_contact):
+            if name != text and valid_contact(current_contact, 2):
                 secondary_contacts.append(current_contact)
                 current_contact = {label: [(text, start)]}
             elif name == text:
                 current_contact[label] = [(text, start)]
         elif label in current_contact:
             previous_value = current_contact[label][-1][0]
-            if previous_label != label and valid_contact(current_contact) and previous_value != text:
+            if previous_label != label and valid_contact(current_contact, 2) and previous_value != text:
                 secondary_contacts.append(current_contact)
                 if not (label == 'EMAIL' and get_possible_email(current_contact['PERSON'][0][0], text)):
                     current_contact = {label: [(text, start)]}
