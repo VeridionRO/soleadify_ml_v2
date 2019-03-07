@@ -50,13 +50,15 @@ def get_text_from_element(element_html):
     return page_text
 
 
-def get_person_from_element(spider, person_name, dom_element, previous_contact=None, depth=1, page=''):
+def get_person_from_element(spider, person_name, dom_element, previous_contact=None, depth=1, page='',
+                            previous_no=1):
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
     dom_element_text_key = hashlib.md5(dom_element_text.encode()).hexdigest()
     docs = []
     t1 = time.time()
+    required_no = 2 if (depth >= 4) else 1
 
     try:
         if dom_element_text_key in spider.cached_docs:
@@ -84,7 +86,7 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
 
     if contact and previous_contact and 'PERSON' in previous_contact and 'PERSON' in contact and len(
             previous_contact['PERSON']) > 0 and len(previous_contact['PERSON']) < len(contact['PERSON']):
-        if valid_contact(previous_contact):
+        if valid_contact(previous_contact, required_no):
             return previous_contact
         else:
             return None
@@ -92,15 +94,16 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
     if contact and valid_contact(contact, 4):
         return contact
 
-    if depth > 4:
+    if depth > 4 and valid_contact(contact, required_no):
         return previous_contact
 
-    if not valid_contact(contact) and valid_contact(previous_contact):
+    if not valid_contact(contact, required_no) and valid_contact(previous_contact, previous_no):
         return previous_contact
     else:
         parent = dom_element.getparent()
         if parent is not None:
-            return get_person_from_element(spider, person_name, parent, contact, depth + 1, page)
+            previous_no = required_no
+            return get_person_from_element(spider, person_name, parent, contact, depth + 1, page, previous_no)
 
 
 def enough_for_a_person(docs):
@@ -233,7 +236,7 @@ def process_secondary_contacts(docs):
         text = current_entity['text']
         start = current_entity['start']
 
-        if start and current_entity['start'] - previous_start > 10:
+        if start and current_entity['start'] - previous_start > 20:
             if valid_contact(current_contact):
                 secondary_contacts.append(current_contact)
             current_contact = {}

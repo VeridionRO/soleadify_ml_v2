@@ -97,7 +97,7 @@ class WebsiteSpider(scrapy.Spider):
             links = self.link_extractor.extract_links(response)
             links = sorted(links, key=sort_links, reverse=True)
             for link in links:
-                if self.max_page >= 0 and not self.is_ignored(link) and link.url not in self.cached_links:
+                if self.max_page >= 0 and not self.is_ignored(link.url) and link.url not in self.cached_links:
                     parsed_links.append(link)
                     self.cached_links[link.url] = True
                     self.max_page -= 1
@@ -127,13 +127,14 @@ class WebsiteSpider(scrapy.Spider):
 
             logger.debug('end website: ' + self.website.link)
 
-    def is_ignored(self, link):
+    def is_ignored(self, url):
+        link_domain = tldextract.extract(str(url)).registered_domain
         if len(self.allowed_domains) == 0:
             return False
         for domain in self.allowed_domains:
-            if domain in link.url:
+            if domain in link_domain or link_domain in domain:
                 for ignored in self.ignored_links:
-                    if ignored in link.url:
+                    if ignored in url:
                         return True
                 return False
 
