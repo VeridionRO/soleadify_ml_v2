@@ -82,7 +82,7 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
     added_time += time.time() - t1
     logger.debug(page + ' - ' + str(added_time))
 
-    contact = enough_for_a_person(docs)
+    contact = enough_for_a_person(docs, person_name)
 
     if contact and previous_contact and 'PERSON' in previous_contact and 'PERSON' in contact and len(
             previous_contact['PERSON']) > 0 and len(previous_contact['PERSON']) < len(contact['PERSON']):
@@ -106,45 +106,35 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
             return get_person_from_element(spider, person_name, parent, contact, depth + 1, page, previous_no)
 
 
-def enough_for_a_person(docs):
+def enough_for_a_person(docs, contact_name):
     contact = entities_to_contact(docs)
 
     # this resolves the case when we are on the page of an person and on that page there is mention to another person
     if 'PERSON' in contact and 1 < len(contact['PERSON']) <= 2 and 'EMAIL' in contact and len(contact['EMAIL']) == 1:
-        for contact_name in contact['PERSON']:
-            possible_email = get_possible_email(contact_name, contact['EMAIL'][0])
-            if possible_email:
-                contact['PERSON'] = [contact_name]
-                break
+        possible_email = get_possible_email(contact_name, contact['EMAIL'][0])
+        if possible_email:
+            contact['PERSON'] = [contact_name]
 
     if 'PERSON' in contact and len(contact['PERSON']) >= 2:
         new_contact_names = []
-        contact_name_2 = None
-        for contact_name in contact['PERSON']:
-            duplicate = False
-            if len(contact_name.split()) <= 1:
+        for contact_name_2 in contact['PERSON']:
+            if contact_name == contact_name_2:
                 continue
-            for contact_name_2 in contact['PERSON']:
-                if contact_name == contact_name_2:
-                    continue
 
-                name_keys = ['GivenName', 'Surname']
-                pp_name = pp_contact_name({'PERSON': contact_name})
-                pp_name_2 = pp_contact_name({'PERSON': contact_name_2})
+            name_keys = ['GivenName', 'Surname']
+            pp_name = pp_contact_name({'PERSON': contact_name})
+            pp_name_2 = pp_contact_name({'PERSON': contact_name_2})
 
-                pp_name_keys = list(set(name_keys) & set(pp_name.keys()))
-                pp_name_2_keys = list(set(name_keys) & set(pp_name_2.keys()))
+            pp_name_keys = list(set(name_keys) & set(pp_name.keys()))
+            pp_name_2_keys = list(set(name_keys) & set(pp_name_2.keys()))
 
-                if len(pp_name_keys) > 1 and len(pp_name_2_keys) > 1 and \
-                        pp_name['GivenName'] == pp_name_2['GivenName'] and pp_name['Surname'] == pp_name_2['Surname']:
-                    duplicate = True
-                    break
-            if not duplicate:
-                new_contact_names.append(contact_name)
-            else:
+            if len(pp_name_keys) > 1 and len(pp_name_2_keys) > 1 and \
+                    pp_name['GivenName'] == pp_name_2['GivenName'] and pp_name['Surname'] == pp_name_2['Surname']:
                 new_contact_name = contact_name if len(contact_name) > len(contact_name_2) else contact_name_2
                 if new_contact_name not in new_contact_names:
-                    new_contact_names.append(new_contact_name)
+                    new_contact_names.append(contact_name)
+            else:
+                new_contact_names.append(contact_name)
 
         if len(new_contact_names) > 0:
             contact['PERSON'] = new_contact_names
@@ -236,7 +226,7 @@ def process_secondary_contacts(docs):
         text = current_entity['text']
         start = current_entity['start']
 
-        if start and current_entity['start'] - previous_start > 30:
+        if start and current_entity['start'] - previous_start > 10:
             if valid_contact(current_contact, 2):
                 secondary_contacts.append(current_contact)
             current_contact = {}
@@ -288,11 +278,11 @@ def entities_to_contact(entities):
     return contact
 
 
-def pp_contact_name(contact):
+def pp_contact_name(contact, leave_case=False):
     split_name_parts = pp.parse(contact['PERSON'])
     for split_name_part in split_name_parts:
         if split_name_part[1] in ['GivenName', 'Surname', 'MiddleName']:
-            contact[split_name_part[1]] = split_name_part[0].lower()
+            contact[split_name_part[1]] = split_name_part[0].lower() if not leave_case else split_name_part[0]
     return contact
 
 

@@ -28,8 +28,8 @@ class WebsitePagePipelineV2(object):
                 logger.error(response.url + ": " + ve)
 
             person_names = []
-            has_one_person = False
-            has_two_person = False
+            consecutive_persons = 0
+            previous_person = None
 
             for ent in docs:
                 if ent['label'] == 'EMAIL':
@@ -38,15 +38,18 @@ class WebsitePagePipelineV2(object):
                 if ent['label'] == 'ORG':
                     continue
                 if ent['label'] == 'PERSON':
-                    if has_one_person:
-                        if has_two_person:
-                            continue
-                        has_two_person = True
-                    has_one_person = True
-                    person_names.append(ent['text'])
+                    if ent['text'] != previous_person:
+                        consecutive_persons += 1
+
+                        if consecutive_persons == 3:
+                            person_names = list(filter(lambda a: a != previous_person, person_names))
+                            consecutive_persons = 0
+                        else:
+                            person_names.append(ent['text'])
+                        previous_person = ent['text']
+
                 else:
-                    has_one_person = False
-                    has_two_person = False
+                    consecutive_persons = 0
 
             person_names = set(person_names)
             for person_name in person_names:
@@ -57,6 +60,21 @@ class WebsitePagePipelineV2(object):
                     continue
 
                 person_elements = new_response.xpath('//*[contains(text(),"%s")]' % person_name)
+                if len(person_elements) == 0:
+                    person_elements = new_response.xpath('//*[contains(.,"%s")]' % person_name)
+                    if len(person_elements) > 0:
+                        person_elements = [person_elements[-1]]
+                    else:
+                        pp_name = pp_contact_name({'PERSON': person_name}, True)
+                        if 'Surname' in pp_name:
+                            pass
+                            if 'GivenName' in pp_name:
+                                xpath = '//*[contains(.,"%s") and contains(.,"%s")]' % \
+                                        (pp_name['Surname'], pp_name['GivenName'])
+                                person_elements = new_response.xpath(xpath)
+                                if len(person_elements) > 0:
+                                    person_elements = [person_elements[-1]]
+
                 for person_element in person_elements:
                     person = get_person_from_element(spider, person_name, person_element.root, page=response.url)
                     if person and valid_contact(person):
