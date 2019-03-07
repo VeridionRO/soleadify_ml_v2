@@ -86,12 +86,12 @@ class WebsitePagePipelineV2(object):
                             break
             logger.debug("end page: " + response.url)
 
-            secondary_contacts = process_secondary_contacts(docs)
-
-            for secondary_contact in secondary_contacts:
-                if valid_contact(secondary_contact, 2):
-                    secondary_contact['URL'] = response.url
-                    WebsiteContact.add_contact(secondary_contact, spider.secondary_contacts, spider)
+            # secondary_contacts = process_secondary_contacts(docs)
+            #
+            # for secondary_contact in secondary_contacts:
+            #     if valid_contact(secondary_contact, 2):
+            #         secondary_contact['URL'] = response.url
+            #         WebsiteContact.add_contact(secondary_contact, spider.secondary_contacts, spider)
 
         except AttributeError as exc:
             logger.error("pipeline error: " + response.url + '-' + str(exc))
