@@ -50,7 +50,7 @@ def get_text_from_element(element_html):
     return page_text
 
 
-def get_person_from_element(spider, person_name, dom_element, previous_person=None, depth=1, page=''):
+def get_person_from_element(spider, person_name, dom_element, previous_contact=None, depth=1, page=''):
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
@@ -80,20 +80,27 @@ def get_person_from_element(spider, person_name, dom_element, previous_person=No
     added_time += time.time() - t1
     logger.debug(page + ' - ' + str(added_time))
 
-    person = enough_for_a_person(docs)
+    contact = enough_for_a_person(docs)
 
-    if person and valid_contact(person, 4):
-        return person
+    if contact and previous_contact and 'PERSON' in previous_contact and 'PERSON' in contact and len(
+            previous_contact['PERSON']) > 0 and len(previous_contact['PERSON']) < len(contact['PERSON']):
+        if valid_contact(previous_contact):
+            return previous_contact
+        else:
+            return None
+
+    if contact and valid_contact(contact, 4):
+        return contact
 
     if depth > 4:
-        return previous_person
+        return previous_contact
 
-    if not person and previous_person:
-        return previous_person
+    if not valid_contact(contact) and valid_contact(previous_contact):
+        return previous_contact
     else:
         parent = dom_element.getparent()
         if parent is not None:
-            return get_person_from_element(spider, person_name, parent, person, depth + 1, page)
+            return get_person_from_element(spider, person_name, parent, contact, depth + 1, page)
 
 
 def enough_for_a_person(docs):
@@ -139,10 +146,7 @@ def enough_for_a_person(docs):
         if len(new_contact_names) > 0:
             contact['PERSON'] = new_contact_names
 
-    if valid_contact(contact):
-        return contact
-
-    return None
+    return contact
 
 
 def is_phone_getter(token):
@@ -194,6 +198,9 @@ def valid_contact(contact, length=1, has_contact=False):
     :param has_contact:
     :return:
     """
+    if not contact:
+        return False
+
     important_keys = ['PERSON', 'TITLE', 'EMAIL', 'PHONE']
     has_contacts_keys = ['EMAIL', 'PHONE']
     contact_keys = contact.keys()
@@ -226,7 +233,7 @@ def process_secondary_contacts(docs):
         text = current_entity['text']
         start = current_entity['start']
 
-        if start and current_entity['start'] - previous_start > 30:
+        if start and current_entity['start'] - previous_start > 10:
             if valid_contact(current_contact):
                 secondary_contacts.append(current_contact)
             current_contact = {}
@@ -239,9 +246,11 @@ def process_secondary_contacts(docs):
             elif name == text:
                 current_contact[label] = [(text, start)]
         elif label in current_contact:
-            if previous_label != label and valid_contact(current_contact):
+            previous_value = current_contact[label][-1][0]
+            if previous_label != label and valid_contact(current_contact) and previous_value != text:
                 secondary_contacts.append(current_contact)
-                current_contact = {label: [(text, start)]}
+                if not (label == 'EMAIL' and get_possible_email(current_contact['PERSON'][0][0], text)):
+                    current_contact = {label: [(text, start)]}
             else:
                 current_contact[label].append((text, start))
         else:

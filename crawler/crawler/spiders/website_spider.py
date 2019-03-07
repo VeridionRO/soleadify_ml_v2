@@ -12,6 +12,7 @@ from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
 from soleadify_ml.models.website import Website
 from soleadify_ml.models.website_contact import WebsiteContact
+from soleadify_ml.utils.SpiderUtils import get_possible_email
 
 logger = logging.getLogger('soleadify_ml')
 
