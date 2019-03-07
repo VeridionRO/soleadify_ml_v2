@@ -3,8 +3,7 @@ import json
 import re
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
-    valid_contact, pp_contact_name
-from soleadify_ml.utils.SocketUtils import recv_end
+    valid_contact, pp_contact_name, get_entities
 from scrapy.http import HtmlResponse
 
 logger = logging.getLogger('soleadify_ml')
@@ -26,13 +25,7 @@ class WebsitePagePipelineV2(object):
             html = re.sub(r'\s\s+', ' ', response.text)
             new_response = HtmlResponse(url=response.url, body=html, encoding='utf8')
             text = get_text_from_element(html)
-            docs = []
-
-            try:
-                spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
-                docs = json.loads(recv_end(spider.soc_spacy))
-            except Exception as ve:
-                logger.error(response.url + ": " + ve)
+            docs = get_entities(spider, text, response.url)
 
             person_names = []
             consecutive_persons = 0

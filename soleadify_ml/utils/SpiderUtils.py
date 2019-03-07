@@ -55,30 +55,9 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
-    dom_element_text_key = hashlib.md5(dom_element_text.encode()).hexdigest()
-    docs = []
     t1 = time.time()
     required_no = 2 if (depth >= 4) else 1
-    # Jake Adams, 615.726.5631, jadams@bakerdonelson.com
-    # Linda S. Finley, 404.589.3408, lfinley@bakerdonelson.com
-    try:
-        if dom_element_text_key in spider.cached_docs:
-            docs = spider.cached_docs[dom_element_text_key]
-        else:
-            spider.soc_spacy.sendall(dom_element_text.encode('utf8') + '--end--'.encode('utf8'))
-            docs = json.loads(recv_end(spider.soc_spacy))
-            new_docs = {}
-
-            for doc in docs:
-                doc_key_text = doc['label'] + doc['text']
-                doc_key = hashlib.md5(doc_key_text.encode()).hexdigest()
-                new_docs[doc_key] = doc
-
-            docs = new_docs.values()
-
-            spider.cached_docs[dom_element_text_key] = docs
-    except:
-        logger.error(page + ": error")
+    docs = get_entities(spider, dom_element_text, page)
 
     added_time += time.time() - t1
     logger.debug(page + ' - ' + str(added_time))
@@ -338,3 +317,21 @@ def get_possible_email(contact_name, email):
             return {'pattern': pattern, 'email': possible_email}
 
     return None
+
+
+def get_entities(spider, text, url):
+    docs = []
+    dom_element_text_key = hashlib.md5(text.encode()).hexdigest()
+    try:
+        if dom_element_text_key in spider.cached_docs:
+            docs = spider.cached_docs[dom_element_text_key]
+        else:
+            spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
+            docs = json.loads(recv_end(spider.soc_spacy))
+
+        spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
+        docs = json.loads(recv_end(spider.soc_spacy))
+    except Exception as ve:
+        logger.error(url + ": " + ve)
+
+    return docs

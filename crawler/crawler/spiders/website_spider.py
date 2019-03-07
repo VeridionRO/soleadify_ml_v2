@@ -1,3 +1,5 @@
+import hashlib
+import json
 import logging
 import socket
 from collections import Counter
