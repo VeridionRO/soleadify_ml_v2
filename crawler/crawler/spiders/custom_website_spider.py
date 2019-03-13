@@ -17,7 +17,7 @@ class CustomWebsiteSpider(scrapy.Spider):
     contacts = {}
     secondary_contacts = {}
     emails = []
-    organizations = []
+    website_metas = {'LAW_CAT': [], 'ORG': []}
     cached_docs = {}
 
     def __init__(self, link, **kwargs):
@@ -45,3 +45,5 @@ class CustomWebsiteSpider(scrapy.Spider):
         for key, contact in self.secondary_contacts.items():
             if key not in self.contacts:
                 print(contact)
+        print('---metas---')
+        print(self.website_metas)

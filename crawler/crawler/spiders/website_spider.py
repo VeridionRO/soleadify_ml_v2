@@ -1,5 +1,3 @@
-import hashlib
-import json
 import logging
 import socket
 from collections import Counter
@@ -37,7 +35,7 @@ class WebsiteSpider(scrapy.Spider):
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
     max_page = 500
-    organizations = []
+    website_metas = {'LAW_CAT': [], 'ORG': []}
 
     def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
@@ -95,7 +93,7 @@ class WebsiteSpider(scrapy.Spider):
     def _extract_requests(self, response):
         r = []
         parsed_links = []
-        priority_pages = {'team': 8, 'staff': 8, 'people': 8, 'meet': 7, 'member': 6, 'detail': 5, 'directory': 4,
+        priority_pages = {'meet': 10, 'team': 9, 'staff': 8, 'people': 7, 'member': 6, 'detail': 5, 'directory': 4,
                           'contact': 3, 'about': 2, 'find': 1}
         if isinstance(response, HtmlResponse):
             def sort_links(current_link):
@@ -118,7 +116,6 @@ class WebsiteSpider(scrapy.Spider):
         return r
 
     def close(self, spider):
-        most_common_org = Counter(self.organizations).most_common(3)
         for key, contact in self.contacts.items():
             for email in self.emails:
                 if 'EMAIL' in contact:
@@ -135,11 +132,18 @@ class WebsiteSpider(scrapy.Spider):
             WebsiteContact.save_contact(self.website, contact, 0)
 
         db_organizations = []
+        most_common_org = Counter(self.website_metas['ORG']).most_common(3)
         for org in most_common_org:
             website_meta = WebsiteMeta(website_id=self.website.id, meta_key='ORGANIZATION', meta_value=org[0],
                                        count=org[1])
             db_organizations.append(website_meta)
         WebsiteMeta.objects.bulk_create(db_organizations, ignore_conflicts=True)
+
+        db_laws = []
+        laws = set(self.website_metas['LAW_CAT'])
+        for law_cat in laws:
+            db_laws.append(WebsiteMeta(website_id=self.website.id, meta_key='LAW_CAT', meta_value=law_cat))
+        WebsiteMeta.objects.bulk_create(db_laws, ignore_conflicts=True)
 
         if self.url:
             self.website.contact_state = 'finished'

@@ -1,9 +1,11 @@
 import logging
 import json
 import re
+
+from soleadify_ml.management.commands.spacy_server import Command
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
-    valid_contact, pp_contact_name, get_entities
+    valid_contact, pp_contact_name
 from scrapy.http import HtmlResponse
 
 logger = logging.getLogger('soleadify_ml')
@@ -25,7 +27,7 @@ class WebsitePagePipelineV2(object):
             html = re.sub(r'\s\s+', ' ', response.text)
             new_response = HtmlResponse(url=response.url, body=html, encoding='utf8')
             text = get_text_from_element(html)
-            docs = get_entities(spider, text, response.url)
+            docs = Command.get_entities(spider, text, response.url)
 
             person_names = []
             consecutive_persons = 0
@@ -35,20 +37,23 @@ class WebsitePagePipelineV2(object):
                 if ent['label'] == 'EMAIL':
                     if ent['text'] not in spider.emails:
                         spider.emails.append(ent['text'])
-                if ent['label'] == 'ORG':
-                    spider.organizations.append(ent['text'])
+                if ent['label'] in ['ORG', 'LAW_CAT']:
+                    spider.website_metas[ent['label']].append(ent['text'])
                     continue
                 if ent['label'] == 'PERSON':
                     if ent['text'] != previous_person:
                         consecutive_persons += 1
 
-                        if consecutive_persons >= 3:
-                            person_names = list(filter(lambda a: a != previous_person, person_names))
-                        person_names.append(ent['text'])
+                        if consecutive_persons < 3 and previous_person:
+                            person_names.append(previous_person)
+
                         previous_person = ent['text']
 
                 else:
                     consecutive_persons = 0
+
+            if previous_person:
+                person_names.append(previous_person)
 
             person_names = set(person_names)
             for person_name in person_names:

@@ -1,16 +1,13 @@
-import json
 import logging
 from datetime import time
 import time
-
+import functools
+import re
+import probablepeople as pp
+from soleadify_ml.management.commands.spacy_server import Command
+from soleadify_ml.utils.HTML2TextV2 import HTML2TextV2
 from email_split import email_split
 from lxml import etree
-import functools
-import html2text
-import re
-import hashlib
-import probablepeople as pp
-from soleadify_ml.utils.SocketUtils import recv_end
 
 logger = logging.getLogger('soleadify_ml')
 added_time = 0
@@ -33,21 +30,25 @@ def check_spider_pipeline(process_item_method):
 
 
 def get_text_from_element(element_html):
-    converter = html2text.HTML2Text(bodywidth=0)
+    converter = HTML2TextV2(bodywidth=0)
     converter.ignore_images = True
     converter.single_line_break = True
+    converter.inheader = True
+    converter.get_email_phone = True
     converter.emphasis_mark = ' '
 
     page_text = converter.handle(element_html)
 
     page_text = page_text.replace('(mailto:', ' ')
     page_text = page_text.replace('mailto:', ' ')
+    page_text = page_text.replace('(tel:', ' ')
+    page_text = page_text.replace('tel:', ' ')
     page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()_\'|]+', ' ', page_text)
     page_text = re.sub(r'(\s*\n\s*)+', '\n', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
 
-    return page_text
+    return page_text.strip()
 
 
 def get_person_from_element(spider, person_name, dom_element, previous_contact=None, depth=1, page='',
@@ -56,8 +57,8 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
     t1 = time.time()
-    required_no = 2 if (depth >= 4) else 1
-    docs = get_entities(spider, dom_element_text, page)
+    required_no = 2
+    docs = Command.get_entities(spider, dom_element_text, page)
 
     added_time += time.time() - t1
     logger.debug(page + ' - ' + str(added_time))
@@ -75,7 +76,7 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
         return contact
 
     if depth > 4 and valid_contact(contact, required_no):
-        return previous_contact
+        return contact
 
     if not valid_contact(contact, required_no) and valid_contact(previous_contact, previous_no):
         return previous_contact
@@ -91,10 +92,12 @@ def enough_for_a_person(docs, contact_name):
 
     # this resolves the case when we are on the page of an person and on that page there is mention to another person
     if 'PERSON' in contact and 1 < len(contact['PERSON']) <= 2 and 'EMAIL' in contact and len(contact['EMAIL']) == 1:
-        possible_email = get_possible_email(contact_name, contact['EMAIL'][0])
-        if possible_email:
-            contact['PERSON'] = [contact_name]
-            contact['EMAIL'] = [contact['EMAIL'][0]]
+        for current_contact_name in contact['PERSON']:
+            possible_email = get_possible_email(current_contact_name, contact['EMAIL'][0])
+            if possible_email:
+                contact['PERSON'] = [current_contact_name]
+                contact['EMAIL'] = [contact['EMAIL'][0]]
+                break
 
     if 'PERSON' in contact and len(contact['PERSON']) >= 2:
         new_contact_names = []
@@ -127,35 +130,6 @@ def enough_for_a_person(docs, contact_name):
     return contact
 
 
-def is_phone_getter(token):
-    pattern = re.compile("([\+|\(|\)|\-| |\.|\/]*[0-9]{1,9}[\+|\(|\)|\-| |\.|\/]*){7,}")
-    if pattern.match(token.text):
-        return True
-    else:
-        return False
-
-
-def get_ent(current_entity):
-    text = current_entity.text
-    if len(text) <= 2:
-        return None
-
-    if current_entity.label_ == 'EMAIL':
-        if not current_entity.root.like_email:
-            return None
-
-    if current_entity.label_ == 'PHONE':
-        text = re.sub('\D', '', text)
-        if not current_entity._.get('is_phone'):
-            return None
-
-        if len(text) <= 7:
-            return None
-
-    return {'label': current_entity.label_, 'text': text.strip(), 'start': current_entity.start,
-            'end': current_entity.end}
-
-
 def title_except(s):
     exceptions = ['a', 'an', 'of', 'the', 'is']
     word_list = re.split(' ', s)  # re.split behaves as expected
@@ -186,7 +160,7 @@ def valid_contact(contact, length=1, has_contact=False):
         if len(has_contact_keys_intersection) == 0:
             return False
 
-    if len(important_keys_intersection) <= length:
+    if len(important_keys_intersection) < length:
         return False
 
     if 'PERSON' not in contact:
@@ -241,14 +215,19 @@ def process_secondary_contacts(docs):
 
 def entities_to_contact(entities):
     contact = {}
+    previous_line_number = None
     for ent in entities:
         ent_text = ent['text']
         ent_label = ent['label']
+        line_number = ent['line_no']
+
+        if previous_line_number and line_number - previous_line_number > 10:
+            contact = {ent_label: [ent_text]}
 
         if ent_label in ['TITLE', 'PERSON']:
             ent_text = title_except(ent_text)
 
-        if ent['label'] == 'ORG':
+        if ent['label'] in ['ORG', 'LAW_CAT']:
             continue
 
         if ent_label in contact:
@@ -256,6 +235,8 @@ def entities_to_contact(entities):
                 contact[ent_label].append(ent_text)
         else:
             contact[ent_label] = [ent_text]
+
+        previous_line_number = ent['line_no']
 
     return contact
 
@@ -317,21 +298,3 @@ def get_possible_email(contact_name, email):
             return {'pattern': pattern, 'email': possible_email}
 
     return None
-
-
-def get_entities(spider, text, url):
-    docs = []
-    dom_element_text_key = hashlib.md5(text.encode()).hexdigest()
-    try:
-        if dom_element_text_key in spider.cached_docs:
-            docs = spider.cached_docs[dom_element_text_key]
-        else:
-            spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
-            docs = json.loads(recv_end(spider.soc_spacy))
-
-        spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
-        docs = json.loads(recv_end(spider.soc_spacy))
-    except Exception as ve:
-        logger.error(url + ": " + ve)
-
-    return docs

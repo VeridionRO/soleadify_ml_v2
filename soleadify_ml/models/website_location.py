@@ -21,6 +21,7 @@ class WebsiteLocation(models.Model):
     house_number = models.CharField(max_length=255)
     level = models.CharField(max_length=255)
     unit = models.CharField(max_length=255)
+    occurrences = models.IntegerField()
 
     # occurrences
     class Meta:

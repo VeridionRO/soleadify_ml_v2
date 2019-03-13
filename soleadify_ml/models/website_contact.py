@@ -99,6 +99,6 @@ class WebsiteContact(models.Model):
                 key = str(website_contact.id) + str(_type) + str(item)
                 website_contact_meta = WebsiteContactMeta(website_contact_id=website_contact.id, meta_key=_type,
                                                           meta_value=item, page=url, score=score)
-                website_contact_meta.update_phone_value(website.get_country_code())
+                website_contact_meta.update_phone_value(website.get_country_codes())
                 metas[key] = website_contact_meta
         WebsiteContactMeta.objects.bulk_create(metas.values(), ignore_conflicts=True)

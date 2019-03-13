@@ -1,6 +1,5 @@
 from django_mysql.models import EnumField
 from django.db import models
-from django.db.models import Count
 from soleadify_ml.models.website_page import WebsitePage
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.models.website_location import WebsiteLocation
@@ -18,7 +17,7 @@ class Website(models.Model):
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
     contact_state = EnumField(choices=['pending', 'working', 'finished'])
-    country_code = None
+    country_codes = []
 
     class Meta:
         db_table = 'websites'
@@ -49,13 +48,13 @@ class Website(models.Model):
 
         return website_contact
 
-    def get_country_code(self, refresh=False):
-        if not self.country_code or refresh:
+    def get_country_codes(self, refresh=False):
+        if len(self.country_codes) == 0 or refresh:
             country_code_set = WebsiteLocation.objects. \
-                annotate(count_website_id=Count('website_id')). \
-                values('country_code', 'count_website_id'). \
-                filter(website_id=self.id).order_by('-count_website_id').first()
-            if country_code_set:
-                self.country_code = country_code_set['country_code'].upper()
+                                   values('country_code', 'occurrences', 'postcode', 'road', 'house_number'). \
+                                   filter(website_id=self.id). \
+                                   order_by('-occurrences', '-postcode', '-road', '-house_number')[:3]
+            for country_code in country_code_set:
+                self.country_codes.append(country_code['country_code'].upper())
 
-        return self.country_code
+        return self.country_codes
