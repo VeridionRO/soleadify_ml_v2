@@ -6,7 +6,7 @@ from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
-from soleadify_ml.utils.SpiderUtils import get_possible_email
+from soleadify_ml.utils.SpiderUtils import get_possible_email, valid_contact
 
 
 class CustomWebsiteSpider(scrapy.Spider):
@@ -40,7 +40,9 @@ class CustomWebsiteSpider(scrapy.Spider):
                 possible_email = get_possible_email(contact['PERSON'], email)
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
-            print(contact)
+            if valid_contact(contact, 1):
+                print(contact)
+
         print('---secondary---')
         for key, contact in self.secondary_contacts.items():
             if key not in self.contacts:

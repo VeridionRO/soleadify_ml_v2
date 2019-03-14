@@ -14,7 +14,7 @@ from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
 from soleadify_ml.models.website import Website
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import get_possible_email
+from soleadify_ml.utils.SpiderUtils import get_possible_email, valid_contact
 
 logger = logging.getLogger('soleadify_ml')
 
@@ -124,7 +124,8 @@ class WebsiteSpider(scrapy.Spider):
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
 
-            WebsiteContact.save_contact(self.website, contact)
+            if valid_contact(contact, 1):
+                WebsiteContact.save_contact(self.website, contact)
 
         for key, contact in self.secondary_contacts.items():
             if key in self.contacts:

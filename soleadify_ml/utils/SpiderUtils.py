@@ -47,12 +47,14 @@ def get_text_from_element(element_html):
     page_text = re.sub(r'(\s*\n\s*)+', '\n', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
+    page_text = re.sub(r',+', ',', page_text)
+    page_text = re.sub(r', +', ', ', page_text)
 
     return page_text.strip()
 
 
 def get_person_from_element(spider, person_name, dom_element, previous_contact=None, depth=1, page='',
-                            previous_no=1):
+                            previous_no=1, previous_dom_element_text=''):
     global added_time
     element_html = etree.tostring(dom_element).decode("utf-8")
     dom_element_text = get_text_from_element(element_html)
@@ -80,11 +82,18 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
 
     if not valid_contact(contact, required_no) and valid_contact(previous_contact, previous_no):
         return previous_contact
+    elif depth > 4:
+        return None
     else:
         parent = dom_element.getparent()
         if parent is not None:
+            new_depth = depth
+            if previous_dom_element_text != dom_element_text:
+                new_depth += 1
             previous_no = required_no
-            return get_person_from_element(spider, person_name, parent, contact, depth + 1, page, previous_no)
+            previous_dom_element_text = dom_element_text
+            return get_person_from_element(spider, person_name, parent, contact, new_depth, page, previous_no,
+                                           previous_dom_element_text)
 
 
 def enough_for_a_person(docs, contact_name):
@@ -166,7 +175,7 @@ def valid_contact(contact, length=1, has_contact=False):
     if 'PERSON' not in contact:
         return False
     else:
-        if len(contact['PERSON']) > 1:
+        if len(contact['PERSON']) > 1 and not isinstance(contact['PERSON'], str):
             return False
 
     return True
