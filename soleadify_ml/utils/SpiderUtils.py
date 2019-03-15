@@ -224,6 +224,7 @@ def process_secondary_contacts(docs):
 
 def entities_to_contact(entities):
     contact = {}
+    final_contact = {}
     previous_line_number = None
     for ent in entities:
         ent_text = ent['text']
@@ -231,6 +232,9 @@ def entities_to_contact(entities):
         line_number = ent['line_no']
 
         if previous_line_number and line_number - previous_line_number > 10:
+            if len(contact.keys()) > 0 and 'PERSON' in contact:
+                merge_dicts(final_contact, contact)
+
             contact = {ent_label: [ent_text]}
 
         if ent_label in ['TITLE', 'PERSON']:
@@ -247,7 +251,7 @@ def entities_to_contact(entities):
 
         previous_line_number = ent['line_no']
 
-    return contact
+    return final_contact if len(final_contact.keys()) else contact
 
 
 def pp_contact_name(contact, leave_case=False):
@@ -307,3 +311,18 @@ def get_possible_email(contact_name, email):
             return {'pattern': pattern, 'email': possible_email}
 
     return None
+
+
+def merge_dicts(dic1, dic2):
+    for key, values2 in dic2.items():
+        if key in ['ORG', 'TITLE', 'EMAIL', 'PHONE', 'PERSON']:
+            if key in dic1:
+                values1 = dic1[key]
+                if not isinstance(values1, list) and not isinstance(values2, list):
+                    if values1 != values2:
+                        dic1[key] = [values1, values2]
+                else:
+                    dic1[key] = list(set(values1).union(set(values2)))
+
+            else:
+                dic1[key] = values2

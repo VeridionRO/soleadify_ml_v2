@@ -4,7 +4,7 @@ import re
 import phonenumbers
 from django.db import models
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
-from soleadify_ml.utils.SpiderUtils import pp_contact_name
+from soleadify_ml.utils.SpiderUtils import pp_contact_name, merge_dicts
 
 
 class WebsiteContact(models.Model):
@@ -50,7 +50,7 @@ class WebsiteContact(models.Model):
             new_contact['TITLE'] = new_titles
 
         if name_key in contacts:
-            WebsiteContact.merge_dicts(contacts[name_key], new_contact)
+            merge_dicts(contacts[name_key], new_contact)
         else:
             contacts[name_key] = new_contact
 
@@ -64,16 +64,6 @@ class WebsiteContact(models.Model):
             contacts[name_key]['DONE'] = False
 
         return contacts[name_key]
-
-    @staticmethod
-    def merge_dicts(dic1, dic2):
-        for key, values in dic2.items():
-            if key in ['ORG', 'TITLE', 'EMAIL', 'PHONE']:
-                if key in dic1:
-                    dic1[key] = list(set(dic1[key]).union(set(values)))
-                    pass
-                else:
-                    dic1[key] = values
 
     @staticmethod
     def get_name_key(name):
