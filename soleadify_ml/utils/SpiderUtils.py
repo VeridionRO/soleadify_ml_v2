@@ -43,7 +43,7 @@ def get_text_from_element(element_html):
     page_text = page_text.replace('mailto:', ' ')
     page_text = page_text.replace('(tel:', ' ')
     page_text = page_text.replace('tel:', ' ')
-    page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()_\'|]+', ' ', page_text)
+    page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()$_\'|]+', ' ', page_text)
     page_text = re.sub(r'(\s*\n\s*)+', '\n', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
     page_text = re.sub(r'\s\s+', ', ', page_text)
@@ -263,7 +263,11 @@ def pp_contact_name(contact, leave_case=False):
 
 
 def get_possible_email(contact_name, email):
-    split_name_parts = pp.parse(contact_name)
+    split_name_parts = []
+    try:
+        split_name_parts = pp.parse(contact_name)
+    except TypeError as e:
+        logger.error("possible_email: " + str(e))
     given_name = ''
     surname = ''
     for split_name_part in split_name_parts:

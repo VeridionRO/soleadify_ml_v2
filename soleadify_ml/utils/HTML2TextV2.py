@@ -110,7 +110,7 @@ class HTML2TextV2(HTML2Text):
             return (self.preceding_data
                     and re.match(r'[^\s]', self.preceding_data[-1]))
 
-        if tag in ['em', 'i', 'u'] and not self.ignore_emphasis:
+        if tag in ['em', 'i', 'u', 'span'] and not self.ignore_emphasis:
             if start and no_preceding_space(self):
                 emphasis = ' ' + self.emphasis_mark
             else:
