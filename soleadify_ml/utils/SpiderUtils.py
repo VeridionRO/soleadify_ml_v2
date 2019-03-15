@@ -266,9 +266,9 @@ def pp_contact_name(contact, leave_case=False):
 def get_possible_email(contact_name, email):
     split_name_parts = []
     try:
-        split_name_parts = pp.parse(json.dumps(contact_name))
+        split_name_parts = pp.parse(contact_name)
     except TypeError as e:
-        logger.error("possible_email: " + str(e) + ' - ' + contact_name)
+        logger.error("possible_email: " + str(e) + ' - ' + json.dumps(contact_name))
     given_name = ''
     surname = ''
     for split_name_part in split_name_parts:
