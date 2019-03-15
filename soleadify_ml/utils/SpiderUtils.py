@@ -236,7 +236,7 @@ def entities_to_contact(entities):
         if ent_label in ['TITLE', 'PERSON']:
             ent_text = title_except(ent_text)
 
-        if ent['label'] in ['ORG', 'LAW_CAT']:
+        if ent['label'] in ['LAW_CAT']:
             continue
 
         if ent_label in contact:

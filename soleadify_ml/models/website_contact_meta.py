@@ -15,14 +15,18 @@ class WebsiteContactMeta(models.Model):
         db_table = 'website_contact_metas'
 
     def update_phone_value(self, country_codes=None):
-        if self.meta_key == 'PHONE':
-            try:
-                for country_code in country_codes:
-                    phone = phonenumbers.parse(self.meta_value, country_code)
-                    if phonenumbers.is_valid_number(phone):
-                        self.meta_value = phonenumbers.format_number(phone,
-                                                                     phonenumbers.PhoneNumberFormat.INTERNATIONAL)
-                        break
+        valid_phone = self.get_valid_country_phone(country_codes, self.meta_value)
+        if valid_phone:
+            self.meta_value = valid_phone
 
-            except NumberParseException:
-                pass
+    @staticmethod
+    def get_valid_country_phone(country_codes, phone_text):
+        try:
+            for country_code in country_codes:
+                phone = phonenumbers.parse(phone_text, country_code)
+                if phonenumbers.is_valid_number(phone):
+                    return phonenumbers.format_number(phone, phonenumbers.PhoneNumberFormat.INTERNATIONAL)
+        except NumberParseException:
+            pass
+
+        return None

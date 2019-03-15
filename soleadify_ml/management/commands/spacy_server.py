@@ -1,6 +1,7 @@
 import hashlib
 import logging
 
+import phonenumbers
 import spacy
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -8,6 +9,8 @@ import json
 import re
 from select import select
 from spacy.tokens.span import Span
+
+from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
 from soleadify_ml.utils.SocketUtils import recv_end, socket_bind
 
 logger = logging.getLogger('soleadify_ml')
@@ -88,10 +91,10 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_entities(spider, text, url):
-        docs = []
+        new_docs = []
         Command.line_numbers = []
         if not text:
-            return docs
+            return new_docs
         dom_element_text_key = hashlib.md5(text.encode()).hexdigest()
         try:
             if dom_element_text_key in spider.cached_docs:
@@ -102,5 +105,16 @@ class Command(BaseCommand):
                 spider.cached_docs[dom_element_text_key] = docs
         except Exception as ve:
             logger.error(url + ": " + ve)
+            return new_docs
 
-        return docs
+        for doc in docs:
+            # if the phone is not valid for the country ignore it
+            if doc['label'] == 'PHONE':
+                valid_phone = WebsiteContactMeta.get_valid_country_phone(spider.country_codes, doc['text'])
+                if valid_phone:
+                    doc['text'] = valid_phone
+                else:
+                    continue
+            new_docs.append(doc)
+
+        return new_docs

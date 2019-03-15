@@ -1,7 +1,8 @@
 import socket
 
+import iso3166
+import tldextract
 from django.conf import settings
-
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from crawler.items import WebsitePageItem
@@ -19,10 +20,17 @@ class CustomWebsiteSpider(scrapy.Spider):
     emails = []
     website_metas = {'LAW_CAT': [], 'ORG': []}
     cached_docs = {}
+    country_codes = []
 
     def __init__(self, link, **kwargs):
         self.start_urls.append(link)
+        try:
+            country_code = tldextract.extract(link).suffix.upper()
+            country = iso3166.countries_by_alpha2[country_code]
+        except KeyError:
+            country = iso3166.countries_by_alpha2['US']
 
+        self.country_codes.append(country.alpha2)
         self.soc_spacy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_spacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         connect(self.soc_spacy, '', settings.SPACY_PORT)

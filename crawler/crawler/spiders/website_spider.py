@@ -36,6 +36,7 @@ class WebsiteSpider(scrapy.Spider):
     ignored_links = ['tel:', 'mailto:']
     max_page = 500
     website_metas = {'LAW_CAT': [], 'ORG': []}
+    country_codes = []
 
     def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
@@ -51,6 +52,7 @@ class WebsiteSpider(scrapy.Spider):
 
             self.website.contact_state = 'working'
             self.website.save(update_fields=['contact_state'])
+            self.country_codes = self.website.get_country_codes()
         elif self.website and self.website.contact_state != 'pending':
             logger.debug('already processed: ' + self.website.link)
         else:
