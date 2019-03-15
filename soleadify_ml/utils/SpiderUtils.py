@@ -326,6 +326,11 @@ def merge_dicts(dic1, dic2):
                 if not isinstance(values1, list) and not isinstance(values2, list):
                     if values1 != values2:
                         dic1[key] = [values1, values2]
+
+                elif not isinstance(values1, list) and isinstance(values2, list):
+                    dic1[key] = list(set(values2).union(set([values1])))
+                elif isinstance(values1, list) and not isinstance(values2, list):
+                    dic1[key] = list(set(values1).union(set([values2])))
                 else:
                     dic1[key] = list(set(values1).union(set(values2)))
 
