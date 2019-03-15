@@ -267,7 +267,7 @@ def get_possible_email(contact_name, email):
     try:
         split_name_parts = pp.parse(contact_name)
     except TypeError as e:
-        logger.error("possible_email: " + str(e))
+        logger.error("possible_email: " + str(e) + ' - ' + email)
     given_name = ''
     surname = ''
     for split_name_part in split_name_parts:
