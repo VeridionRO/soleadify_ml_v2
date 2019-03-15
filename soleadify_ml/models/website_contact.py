@@ -1,7 +1,5 @@
 import hashlib
 import re
-
-import phonenumbers
 from django.db import models
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
 from soleadify_ml.utils.SpiderUtils import pp_contact_name, merge_dicts
@@ -76,8 +74,11 @@ class WebsiteContact(models.Model):
         if 'Surname' in pp_name:
             name_key += pp_name['Surname']
 
+        if len(name_key) == 0:
+            name_key = name
+
         name_key = re.sub(r'[^a-zA-Z]+', '', name_key)
-        return hashlib.md5(name_key.encode()).hexdigest()
+        return hashlib.md5(name_key.encode('utf8')).hexdigest()
 
     @staticmethod
     def save_contact(website, contact, score=10):
