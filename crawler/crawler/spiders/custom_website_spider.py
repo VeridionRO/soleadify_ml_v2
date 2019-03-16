@@ -49,6 +49,7 @@ class CustomWebsiteSpider(scrapy.Spider):
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
             if valid_contact(contact, 1):
+                contact.pop('URL', None)
                 print(contact)
 
         print('---secondary---')
