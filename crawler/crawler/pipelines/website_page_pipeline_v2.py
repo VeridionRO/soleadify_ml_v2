@@ -2,6 +2,8 @@ import logging
 import json
 import re
 
+from validate_email import validate_email
+
 from soleadify_ml.management.commands.spacy_server import Command
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
@@ -28,6 +30,11 @@ class WebsitePagePipelineV2(object):
             new_response = HtmlResponse(url=response.url, body=html, encoding='utf8')
             text = get_text_from_element(html)
             docs = Command.get_entities(spider, text, response.url)
+
+            p = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', re.MULTILINE | re.IGNORECASE)
+            regex_emails = re.findall(p, response.text)
+            valid_regex_emails = set({email for email in regex_emails if validate_email(email)})
+            spider.emails.extend(valid_regex_emails)
 
             person_names = []
             consecutive_persons = 0
@@ -57,7 +64,8 @@ class WebsitePagePipelineV2(object):
 
             person_names = set(person_names)
             for person_name in person_names:
-                name_key = WebsiteContact.get_name_key(person_name)
+                name_parts = WebsiteContact.get_name_key(person_name)
+                name_key = name_parts['name_key']
 
                 if name_key in spider.contacts and spider.contacts[name_key]['DONE']:
                     logger.debug("contact cached: " + json.dumps(spider.contacts[name_key]) + " : " + response.url)

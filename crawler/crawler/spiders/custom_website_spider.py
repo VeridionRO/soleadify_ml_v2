@@ -12,7 +12,6 @@ from soleadify_ml.utils.SpiderUtils import get_possible_email, valid_contact
 
 class CustomWebsiteSpider(scrapy.Spider):
     name = 'CustomWebsiteSpider'
-    allowed_domains = ['*']
     start_urls = []
     pipeline = [WebsitePagePipelineV2]
     contacts = {}
@@ -48,13 +47,13 @@ class CustomWebsiteSpider(scrapy.Spider):
                 possible_email = get_possible_email(contact['PERSON'], email)
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
-            if valid_contact(contact, 1):
+            if valid_contact(contact, 2):
                 contact.pop('URL', None)
                 print(contact)
 
-        print('---secondary---')
-        for key, contact in self.secondary_contacts.items():
-            if key not in self.contacts:
-                print(contact)
+        # print('---secondary---')
+        # for key, contact in self.secondary_contacts.items():
+        #     if key not in self.contacts:
+        #         print(contact)
         print('---metas---')
         print(self.website_metas)

@@ -1,8 +1,10 @@
 import hashlib
 import re
+
+from bitfield import BitField
 from django.db import models
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
-from soleadify_ml.utils.SpiderUtils import pp_contact_name, merge_dicts
+from soleadify_ml.utils.SpiderUtils import pp_contact_name, merge_dicts, get_possible_email
 
 
 class WebsiteContact(models.Model):
@@ -12,6 +14,15 @@ class WebsiteContact(models.Model):
     first_name = models.CharField(max_length=255)
     last_name = models.CharField(max_length=255)
     middle_name = models.CharField(max_length=255)
+    score = BitField(flags=(
+        ('has_org', 'has organization', 1),
+        ('has_title', 'has title', 2),
+        ('has_phone', 'has phone', 4),
+        ('has_email', 'has email', 8),
+        ('has_unique_phone', 'has unique phone', 16),
+        ('has_unique_email', 'has unique email', 32),
+        ('has_matching_email', 'has matching email', 64),
+    ))
 
     class Meta:
         db_table = 'website_contacts'
@@ -28,9 +39,12 @@ class WebsiteContact(models.Model):
             new_contact = contact
 
         name = new_contact['PERSON'][0]
+        name_parts = WebsiteContact.get_name_key(name)
+        name_key = name_parts['name_key']
+        new_name = name_parts['name']
+
         new_contact['URL'] = contact['URL']
-        new_contact['PERSON'] = name.title()
-        name_key = WebsiteContact.get_name_key(name)
+        new_contact['PERSON'] = new_name.title()
 
         if 'EMAIL' in new_contact:
             emails = new_contact['EMAIL']
@@ -66,32 +80,79 @@ class WebsiteContact(models.Model):
     @staticmethod
     def get_name_key(name):
         pp_name = pp_contact_name({'PERSON': name})
-        name_key = ''
+        new_name = ''
 
         if 'GivenName' in pp_name:
-            name_key += pp_name['GivenName']
+            new_name += pp_name['GivenName']
 
         if 'Surname' in pp_name:
-            name_key += pp_name['Surname']
+            new_name += ' ' + pp_name['Surname']
 
-        if len(name_key) == 0:
-            name_key = name
+        if not ('GivenName' in pp_name and 'Surname' in pp_name):
+            new_name = name
 
-        name_key = re.sub(r'[^a-zA-Z]+', '', name_key)
-        return hashlib.md5(name_key.encode('utf8')).hexdigest()
+        name_key = re.sub(r'[^a-zA-Z]+', '', new_name)
+        return {'name_key': hashlib.md5(name_key.encode('utf8')).hexdigest(),
+                'name': new_name}
 
     @staticmethod
-    def save_contact(website, contact, score=10):
+    def save_contact(website, contact, score):
         metas = {}
         url = contact['URL']
-        website_contact = website.extract_contact(contact)
+        website_contact = website.extract_contact(contact, score)
         if not website_contact.id:
             website_contact.save()
         for _type, items in contact.items():
             for item in items:
                 key = str(website_contact.id) + str(_type) + str(item)
                 website_contact_meta = WebsiteContactMeta(website_contact_id=website_contact.id, meta_key=_type,
-                                                          meta_value=item, page=url, score=score)
+                                                          meta_value=item, page=url)
                 website_contact_meta.update_phone_value(website.get_country_codes())
                 metas[key] = website_contact_meta
         WebsiteContactMeta.objects.bulk_create(metas.values(), ignore_conflicts=True)
+
+    @staticmethod
+    def get_contact_score(contact, contacts):
+        score = 0
+        if 'ORG' in contact:
+            score = score | WebsiteContact.score.has_org
+        if 'TITLE' in contact:
+            score = score | WebsiteContact.score.has_title
+        if 'PHONE' in contact:
+            score = score | WebsiteContact.score.has_phone
+        if 'EMAIL' in contact:
+            score = score | WebsiteContact.score.has_email
+
+        if 'PHONE' in contact:
+            phones = contact['PHONE']
+            duplicated_phones = []
+            for phone in phones:
+                for key, temp_contact in contacts.items():
+                    if temp_contact == contact:
+                        continue
+                    if 'PHONE' in temp_contact and phone in temp_contact['PHONE']:
+                        duplicated_phones.append(phone)
+                        break
+            if len(duplicated_phones) != len(phones):
+                score = score | WebsiteContact.score.has_unique_phone
+
+        if 'EMAIL' in contact:
+            emails = contact['EMAIL']
+            duplicated_emails = []
+            for email in emails:
+                for key, temp_contact in contacts.items():
+                    if temp_contact == contact:
+                        continue
+                    if 'EMAIL' in temp_contact and email in temp_contact['EMAIL']:
+                        duplicated_emails.append(email)
+                        break
+            if len(duplicated_emails) != len(emails):
+                score = score | WebsiteContact.score.has_unique_email
+
+        if 'EMAIL' in contact:
+            for email in contact['EMAIL']:
+                if get_possible_email(contact['PERSON'], email):
+                    score = score | WebsiteContact.score.has_matching_email
+                    break
+
+        return score

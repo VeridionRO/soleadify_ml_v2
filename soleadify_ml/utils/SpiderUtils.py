@@ -51,6 +51,9 @@ def get_text_from_element(element_html):
     page_text = re.sub(r',+', ',', page_text)
     page_text = re.sub(r', +', ', ', page_text)
 
+    if 'BEGIN:VCARD' in page_text:
+        page_text = page_text.replace(':', '\n')
+
     return page_text.strip()
 
 
@@ -95,13 +98,17 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
             previous_dom_element_text = dom_element_text
             return get_person_from_element(spider, person_name, parent, contact, new_depth, page, previous_no,
                                            previous_dom_element_text)
+        elif valid_contact(contact, required_no):
+            return contact
+        elif valid_contact(previous_contact, required_no):
+            return contact
 
 
 def enough_for_a_person(docs, contact_name):
     contact = entities_to_contact(docs)
 
     # this resolves the case when we are on the page of an person and on that page there is mention to another person
-    if 'PERSON' in contact and 1 < len(contact['PERSON']) <= 2 and 'EMAIL' in contact and len(contact['EMAIL']) == 1:
+    if 'PERSON' in contact and 'EMAIL' in contact and len(contact['EMAIL']) == 1:
         for current_contact_name in contact['PERSON']:
             possible_email = get_possible_email(current_contact_name, contact['EMAIL'][0])
             if possible_email:
@@ -241,9 +248,6 @@ def entities_to_contact(entities):
         if ent_label in ['TITLE', 'PERSON']:
             ent_text = title_except(ent_text)
 
-        if ent['label'] in ['LAW_CAT']:
-            continue
-
         if ent_label in contact:
             if ent_text not in contact[ent_label]:
                 contact[ent_label].append(ent_text)
@@ -309,6 +313,8 @@ def get_possible_email(contact_name, email):
     possible_emails['|surname|given_name0'] = "%s%s@%s" % (surname, given_name_first_letter, domain)
     possible_emails['surname|-|given_name0'] = "%s-%s@%s" % (surname, given_name_first_letter, domain)
     possible_emails['surname|_|given_name0'] = "%s_%s@%s" % (surname, given_name_first_letter, domain)
+    possible_emails['surname0|given_name0'] = "%s%s@%s" % (surname_first_letter, given_name_first_letter, domain)
+    possible_emails['given_name0|surname0'] = "%s%s@%s" % (given_name_first_letter, surname_first_letter, domain)
 
     for possible_pattern, possible_email in possible_emails.items():
         if possible_email == email:

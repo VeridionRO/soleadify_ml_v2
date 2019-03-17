@@ -126,13 +126,9 @@ class WebsiteSpider(scrapy.Spider):
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
 
-            if valid_contact(contact, 1):
-                WebsiteContact.save_contact(self.website, contact)
-
-        for key, contact in self.secondary_contacts.items():
-            if key in self.contacts:
-                continue
-            WebsiteContact.save_contact(self.website, contact, 0)
+            if valid_contact(contact, 2):
+                contact_score = WebsiteContact.get_contact_score(contact, self.contacts)
+                WebsiteContact.save_contact(self.website, contact, contact_score)
 
         db_organizations = []
         most_common_org = Counter(self.website_metas['ORG']).most_common(3)
@@ -143,9 +139,10 @@ class WebsiteSpider(scrapy.Spider):
         WebsiteMeta.objects.bulk_create(db_organizations, ignore_conflicts=True)
 
         db_laws = []
-        laws = set(self.website_metas['LAW_CAT'])
-        for law_cat in laws:
-            db_laws.append(WebsiteMeta(website_id=self.website.id, meta_key='LAW_CAT', meta_value=law_cat))
+        counter_law_cats = Counter(self.website_metas['LAW_CAT'])
+        laws = {x: count for x, count in counter_law_cats.items() if count > 1}
+        for law_cat, count in laws.items():
+            db_laws.append(WebsiteMeta(website_id=self.website.id, meta_key='LAW_CAT', meta_value=law_cat, count=count))
         WebsiteMeta.objects.bulk_create(db_laws, ignore_conflicts=True)
 
         if self.url:

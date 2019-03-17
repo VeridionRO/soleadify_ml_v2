@@ -9,7 +9,6 @@ class WebsiteContactMeta(models.Model):
     meta_key = models.CharField(max_length=255)
     meta_value = models.CharField(max_length=255)
     page = models.CharField(max_length=1024)
-    score = models.IntegerField()
 
     class Meta:
         db_table = 'website_contact_metas'

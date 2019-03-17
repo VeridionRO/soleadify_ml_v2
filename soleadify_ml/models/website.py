@@ -30,7 +30,7 @@ class Website(models.Model):
         pages = WebsitePage.objects.filter(website_id=self.id).all()
         return pages
 
-    def extract_contact(self, dirty_contact):
+    def extract_contact(self, dirty_contact, score):
         website_contact = WebsiteContact.objects.filter(website_id=self.id, name=dirty_contact['PERSON']).first()
         pp_contact_name(dirty_contact)
         if not website_contact:
@@ -38,7 +38,9 @@ class Website(models.Model):
                 website_id=self.id, name=dirty_contact['PERSON'],
                 first_name=dirty_contact['GivenName'] if 'GivenName' in dirty_contact else None,
                 last_name=dirty_contact['Surname'] if 'Surname' in dirty_contact else None,
-                middle_name=dirty_contact['MiddleName'] if 'MiddleName' in dirty_contact else None)
+                middle_name=dirty_contact['MiddleName'] if 'MiddleName' in dirty_contact else None,
+                score=score)
+
         dirty_contact.pop('PERSON', None)
         dirty_contact.pop('GivenName', None)
         dirty_contact.pop('Surname', None)
