@@ -34,7 +34,7 @@ class WebsiteSpider(scrapy.Spider):
     cached_links = {}
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
-    max_page = 500
+    max_page = 1000
     website_metas = {'LAW_CAT': [], 'ORG': []}
     country_codes = []
 
