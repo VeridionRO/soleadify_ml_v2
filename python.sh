@@ -14,4 +14,6 @@ pip install probablepeople
 pip install html2text
 pip install email_split
 pip install iso3166
+pip install validate_email
+pip install django-bitfield
 python -m spacy download en_core_web_lg

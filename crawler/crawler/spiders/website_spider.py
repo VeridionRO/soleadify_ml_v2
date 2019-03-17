@@ -95,8 +95,8 @@ class WebsiteSpider(scrapy.Spider):
     def _extract_requests(self, response):
         r = []
         parsed_links = []
-        priority_pages = {'meet': 10, 'team': 9, 'staff': 8, 'people': 7, 'member': 6, 'detail': 5, 'directory': 4,
-                          'contact': 3, 'about': 2, 'find': 1}
+        priority_pages = {'vcard': 11, 'vcf': 11, 'meet': 10, 'team': 9, 'staff': 8, 'people': 7, 'member': 6,
+                          'detail': 5, 'directory': 4, 'contact': 3, 'about': 2, 'find': 1}
         if isinstance(response, HtmlResponse):
             def sort_links(current_link):
                 url = current_link.url.lower()
