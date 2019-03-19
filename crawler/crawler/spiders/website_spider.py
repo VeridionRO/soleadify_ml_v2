@@ -126,6 +126,7 @@ class WebsiteSpider(scrapy.Spider):
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
 
+        for key, contact in self.contacts.items():
             if valid_contact(contact, 2):
                 contact_score = WebsiteContact.get_contact_score(contact, self.contacts)
                 WebsiteContact.save_contact(self.website, contact, contact_score)

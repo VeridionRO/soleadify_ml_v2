@@ -9,16 +9,16 @@ def connect(soc, host, port):
     try:
         soc.connect((host, port))
         return True
-    except:
-        logger.debug('failed to connect once')
+    except ConnectionRefusedError as e:
+        logger.debug('failed to connect once: %s', e)
         try:
             sleep(30)
             logger.debug('sleep 30s and retry')
             soc.connect((host, port))
-        except:
-            logger.debug('failed to connect twice, die')
+        except ConnectionRefusedError as e:
+            logger.debug('failed to connect twice, die: %s', e)
 
-        return False
+    return False
 
 
 def recv_end(soc):

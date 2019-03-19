@@ -1,7 +1,5 @@
 import hashlib
 import logging
-
-import phonenumbers
 import spacy
 from django.conf import settings
 from django.core.management.base import BaseCommand
@@ -13,7 +11,7 @@ from spacy.tokens.span import Span
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
 from soleadify_ml.utils.SocketUtils import recv_end, socket_bind
 
-logger = logging.getLogger('soleadify_ml')
+logger = logging.getLogger('spacy')
 
 
 class Command(BaseCommand):
@@ -25,14 +23,14 @@ class Command(BaseCommand):
         Span.set_extension('is_phone', getter=Command.is_phone_getter, force=True)
         Span.set_extension('line_number', getter=Command.line_number_getter, force=True)
 
-        self.stdout.write("Loaded spacy server", ending='\n')
+        logger.debug("Loaded spacy server")
         main_socks, read_socks, write_socks = socket_bind('', settings.SPACY_PORT)
         while True:
             readable, writeable, exceptions = select(read_socks, write_socks, [])
             for sockobj in readable:
                 if sockobj in main_socks:
                     new_sock, address = sockobj.accept()
-                    print('Connect:', address, id(new_sock))
+                    logger.debug('Connect: %s - %s', address, id(new_sock))
                     read_socks.append(new_sock)
                 else:
                     try:
@@ -104,7 +102,7 @@ class Command(BaseCommand):
                 docs = json.loads(recv_end(spider.soc_spacy))
                 spider.cached_docs[dom_element_text_key] = docs
         except Exception as ve:
-            logger.error(url + ": " + ve)
+            logger.error("%s : %s", url, ve)
             return new_docs
 
         for doc in docs:

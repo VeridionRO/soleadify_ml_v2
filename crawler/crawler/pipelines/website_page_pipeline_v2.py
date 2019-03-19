@@ -25,14 +25,16 @@ class WebsitePagePipelineV2(object):
             pass
 
         try:
-            logger.debug("start page: " + response.url)
+            logger.debug("start page: %s", response.url)
             html = re.sub(r'\s\s+', ' ', response.text)
             new_response = HtmlResponse(url=response.url, body=html, encoding='utf8')
             text = get_text_from_element(html)
             docs = Command.get_entities(spider, text, response.url)
+            logger.debug("get names")
 
-            p = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+', re.MULTILINE | re.IGNORECASE)
+            p = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+')
             regex_emails = re.findall(p, response.text)
+            logger.debug("get names")
             valid_regex_emails = set({email for email in regex_emails if validate_email(email)})
             spider.emails.extend(valid_regex_emails)
 
@@ -68,7 +70,7 @@ class WebsitePagePipelineV2(object):
                 name_key = name_parts['name_key']
 
                 if name_key in spider.contacts and spider.contacts[name_key]['DONE']:
-                    logger.debug("contact cached: " + json.dumps(spider.contacts[name_key]) + " : " + response.url)
+                    logger.debug("contact cached: %s:%s:", json.dumps(spider.contacts[name_key]), response.url)
                     continue
 
                 person_elements = new_response.xpath('//*[contains(text(),"%s")]' % person_name)
@@ -88,6 +90,7 @@ class WebsitePagePipelineV2(object):
                                     person_elements = [person_elements[-1]]
 
                 for person_element in person_elements:
+                    logger.debug("%s - processing names: %s", response.url, person_name)
                     person = get_person_from_element(spider, person_name, person_element.root, page=response.url)
                     if person and valid_contact(person):
                         person['URL'] = response.url
@@ -96,17 +99,10 @@ class WebsitePagePipelineV2(object):
 
                         if new_contact['DONE']:
                             break
-            logger.debug("end page: " + response.url)
-
-            # secondary_contacts = process_secondary_contacts(docs)
-            #
-            # for secondary_contact in secondary_contacts:
-            #     if valid_contact(secondary_contact, 2):
-            #         secondary_contact['URL'] = response.url
-            #         WebsiteContact.add_contact(secondary_contact, spider.secondary_contacts, spider)
+            logger.debug("end page: %s", response.url)
 
         except AttributeError as exc:
-            logger.error("pipeline error: " + response.url + '-' + str(exc))
+            logger.error("pipeline error: %s - %s", response.url, str(exc))
             pass
 
         return item
