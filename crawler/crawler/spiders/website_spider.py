@@ -1,7 +1,5 @@
 import logging
 import socket
-from collections import Counter
-
 import tldextract
 
 from crawler.spiders.spider_common import SpiderCommon
@@ -30,11 +28,9 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
     website = None
     soc_spacy = None
     url = None
-    emails = []
     cached_links = {}
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
-    max_page = 500
     country_codes = []
 
     def __init__(self, website_id, force=False, **kw):
@@ -108,10 +104,10 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
             links = self.link_extractor.extract_links(response)
             links = sorted(links, key=sort_links, reverse=True)
             for link in links:
-                if self.max_page >= 0 and not self.is_ignored(link.url) and link.url not in self.cached_links:
+                if self.max_pages >= 0 and not self.is_ignored(link.url) and link.url not in self.cached_links:
                     parsed_links.append(link)
                     self.cached_links[link.url] = True
-                    self.max_page -= 1
+                    self.max_pages -= 1
 
             r.extend(Request(x.url, callback=self.parse) for x in parsed_links)
         return r
@@ -135,7 +131,7 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
             if meta_key not in self.website_metas:
                 continue
             db_metas = []
-            counter_metas = Counter(self.website_metas[meta_key]).most_common(max_items)
+            counter_metas = self.website_metas[meta_key].most_common(max_items)
             metas = {x: count for x, count in counter_metas if count > 1}
             for meta, count in metas.items():
                 db_metas.append(

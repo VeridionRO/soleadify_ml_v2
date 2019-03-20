@@ -1,5 +1,6 @@
 import json
 import logging
+from collections import Counter
 
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SpiderUtils import pp_contact_name, get_possible_email
@@ -9,8 +10,12 @@ logger = logging.getLogger('soleadify_ml')
 
 class SpiderCommon:
     contacts = {}
+    max_pages = 500
     website_metas = {
-        'EMAIL': []
+        'EMAIL': Counter(),
+        'PHONE': Counter(),
+        'ORG': Counter(),
+        'LAW_CAT': Counter(),
     }
 
     def contact_done(self, name, url):
@@ -45,13 +50,14 @@ class SpiderCommon:
         person_names = []
         consecutive_persons = 0
         previous_person = None
+        website_metas_temp = {}
         for ent in docs:
             label = ent['label']
             text = ent['text']
             if label in ['EMAIL', 'PHONE', 'ORG', 'LAW_CAT']:
-                if label not in self.website_metas:
-                    self.website_metas[label] = []
-                self.website_metas[label].append(text)
+                if label not in website_metas_temp:
+                    website_metas_temp[label] = {}
+                website_metas_temp[label][text] = True
             if label == 'PERSON':
                 if text != previous_person:
                     consecutive_persons += 1
@@ -66,11 +72,15 @@ class SpiderCommon:
         if previous_person:
             person_names.append(previous_person)
 
+        for key, metas in website_metas_temp.items():
+            self.website_metas[key].update(metas.keys())
+
         return set(person_names)
 
     def get_contact_score(self, contact):
         contacts = self.contacts
         score = 0
+
         if 'ORG' in contact:
             score = score | WebsiteContact.score.has_org
         if 'TITLE' in contact:
@@ -120,4 +130,7 @@ class SpiderCommon:
         return score
 
     def remove_meta(self, key, value):
-        self.website_metas[key] = [i for i in self.website_metas[key] if i.lower() != value]
+        crawled_pages = 500 - self.max_pages
+        metas = self.website_metas[key]
+        if value in metas and metas[value] / crawled_pages < 0.5:
+            del self.website_metas[key][value]
