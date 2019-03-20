@@ -6,6 +6,8 @@ from django.core.management.base import BaseCommand
 import json
 import re
 from select import select
+
+from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
 
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
@@ -22,6 +24,8 @@ class Command(BaseCommand):
         spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER, disable=['parser', 'tagger', 'textcat'])
         Span.set_extension('is_phone', getter=Command.is_phone_getter, force=True)
         Span.set_extension('line_number', getter=Command.line_number_getter, force=True)
+        Doc.set_extension('lines', getter=Command.get_lines, setter=Command.set_lines)
+        Doc.set_extension('_lines', default=list())
 
         logger.debug("Loaded spacy server")
         main_socks, read_socks, write_socks = socket_bind('', settings.SPACY_PORT)
@@ -41,6 +45,7 @@ class Command(BaseCommand):
                             read_socks.remove(sockobj)
                         else:
                             for doc in spacy_model.pipe([data]):
+                                doc._.lines = [x.start() for x in re.finditer('\n', doc.text)]
                                 for ent in doc.ents:
                                     current_entity = self.get_ent(ent)
                                     entities.append(current_entity) if current_entity else None
@@ -60,11 +65,22 @@ class Command(BaseCommand):
     @staticmethod
     def line_number_getter(token):
         start_char = token.start_char
-        line_numbers = [x.start() for x in re.finditer('\n', token.doc.text)]
+        line_numbers = token.doc._.lines
+        # line_numbers = [x.start() for x in re.finditer('\n', token.doc.text)]
         for key, line_no in enumerate(line_numbers):
             if start_char < line_no:
                 return key
         return len(line_numbers)
+
+    @staticmethod
+    def get_lines(doc):
+        # get lines from internal attribute
+        return doc._._lines
+
+    @staticmethod
+    def set_lines(doc, value):
+        # append value to existing list
+        doc._._lines = value
 
     @staticmethod
     def get_ent(current_entity):
@@ -97,6 +113,7 @@ class Command(BaseCommand):
         try:
             if dom_element_text_key in spider.cached_docs:
                 docs = spider.cached_docs[dom_element_text_key]
+                logger.debug("cached : %s", url)
             else:
                 spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
                 docs = json.loads(recv_end(spider.soc_spacy))

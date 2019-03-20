@@ -1,4 +1,5 @@
 from soleadify_ml.utils.SpiderUtils import check_spider_pipeline
+import re
 
 
 class TagLinkPipeline(object):
@@ -11,7 +12,7 @@ class TagLinkPipeline(object):
                                      "last_updated_by": "3BCYEQgDIHTFtTzwIy6Dpeowaae2", "status": "done",
                                      "evaluation": "NONE"}
                         }
-
+        doc._.lines = [x.start() for x in re.finditer('\n', doc.text)]
         for ent in doc.ents:
             entity = {
                 "label": [ent.label_],

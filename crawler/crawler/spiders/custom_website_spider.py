@@ -3,6 +3,8 @@ import socket
 import iso3166
 import tldextract
 from django.conf import settings
+
+from crawler.spiders.spider_common import SpiderCommon
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from crawler.items import WebsitePageItem
@@ -10,18 +12,17 @@ from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
 from soleadify_ml.utils.SpiderUtils import get_possible_email, valid_contact
 
 
-class CustomWebsiteSpider(scrapy.Spider):
+class CustomWebsiteSpider(scrapy.Spider, SpiderCommon):
     name = 'CustomWebsiteSpider'
     start_urls = []
     pipeline = [WebsitePagePipelineV2]
-    contacts = {}
     secondary_contacts = {}
     emails = []
     website_metas = {'LAW_CAT': [], 'ORG': []}
     cached_docs = {}
     country_codes = []
 
-    def __init__(self, link, **kwargs):
+    def __init__(self, link, **kw):
         self.start_urls.append(link)
         try:
             country_code = tldextract.extract(link).suffix.upper()
@@ -34,7 +35,7 @@ class CustomWebsiteSpider(scrapy.Spider):
         self.soc_spacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         connect(self.soc_spacy, '', settings.SPACY_PORT)
 
-        super().__init__(**kwargs)
+        super(CustomWebsiteSpider, self).__init__(**kw)
 
     def parse(self, response):
         yield WebsitePageItem({'response': response})
@@ -51,9 +52,5 @@ class CustomWebsiteSpider(scrapy.Spider):
                 contact.pop('URL', None)
                 print(contact)
 
-        # print('---secondary---')
-        # for key, contact in self.secondary_contacts.items():
-        #     if key not in self.contacts:
-        #         print(contact)
         print('---metas---')
         print(self.website_metas)

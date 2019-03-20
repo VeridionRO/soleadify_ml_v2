@@ -4,6 +4,7 @@ import scrapy
 import spacy
 import re
 from django.conf import settings
+from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
 
 from soleadify_ml.utils.SocketUtils import connect
@@ -27,7 +28,9 @@ class TagLinkSpider(scrapy.Spider):
         self.start_urls.append(links)
         # self.start_urls = []
         self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
-        Span.set_extension('line_number', getter=self.line_number_getter, force=True)
+        Span.set_extension('line_number', getter=TagLinkSpider.line_number_getter, force=True)
+        Doc.set_extension('lines', getter=TagLinkSpider.get_lines, setter=TagLinkSpider.set_lines)
+        Doc.set_extension('_lines', default=list())
 
         self.soc_spacy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_spacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -43,11 +46,21 @@ class TagLinkSpider(scrapy.Spider):
             for tag in self.tags:
                 the_file.write(json.dumps(tag) + "\n")
 
-    def line_number_getter(self, token):
+    @staticmethod
+    def line_number_getter(token):
         start_char = token.start_char
-        if len(self.line_numbers) == 0:
-            self.line_numbers = [x.start() for x in re.finditer('\n', token.doc.text)]
-        for key, line_no in enumerate(self.line_numbers):
+        line_numbers = token.doc._.lines
+        for key, line_no in enumerate(line_numbers):
             if start_char < line_no:
                 return key
         return 0
+
+    @staticmethod
+    def get_lines(doc):
+        # get lines from internal attribute
+        return doc._._lines
+
+    @staticmethod
+    def set_lines(doc, value):
+        # append value to existing list
+        doc._._lines = value

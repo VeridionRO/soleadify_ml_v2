@@ -4,6 +4,7 @@ from collections import Counter
 
 import tldextract
 
+from crawler.spiders.spider_common import SpiderCommon
 from soleadify_ml.models.website_meta import WebsiteMeta
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
@@ -19,13 +20,12 @@ from soleadify_ml.utils.SpiderUtils import get_possible_email, valid_contact
 logger = logging.getLogger('soleadify_ml')
 
 
-class WebsiteSpider(scrapy.Spider):
+class WebsiteSpider(scrapy.Spider, SpiderCommon):
     name = 'WebsiteSpider'
     allowed_domains = []
     start_urls = []
     pages = []
     pipeline = [WebsitePagePipelineV2]
-    contacts = {}
     secondary_contacts = {}
     website = None
     soc_spacy = None
