@@ -17,8 +17,6 @@ class CustomWebsiteSpider(scrapy.Spider, SpiderCommon):
     start_urls = []
     pipeline = [WebsitePagePipelineV2]
     secondary_contacts = {}
-    emails = []
-    website_metas = {'LAW_CAT': [], 'ORG': []}
     cached_docs = {}
     country_codes = []
 
@@ -42,7 +40,7 @@ class CustomWebsiteSpider(scrapy.Spider, SpiderCommon):
 
     def close(self, spider):
         for key, contact in self.contacts.items():
-            for email in self.emails:
+            for email in self.website_metas['EMAIL']:
                 if 'EMAIL' in contact:
                     break
                 possible_email = get_possible_email(contact['PERSON'], email)

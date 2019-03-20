@@ -74,12 +74,10 @@ class Command(BaseCommand):
 
     @staticmethod
     def get_lines(doc):
-        # get lines from internal attribute
         return doc._._lines
 
     @staticmethod
     def set_lines(doc, value):
-        # append value to existing list
         doc._._lines = value
 
     @staticmethod
@@ -89,6 +87,7 @@ class Command(BaseCommand):
             return None
 
         if current_entity.label_ == 'EMAIL':
+            text = text.lower()
             if not current_entity.root.like_email:
                 return None
 

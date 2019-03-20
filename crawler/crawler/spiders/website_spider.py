@@ -35,7 +35,6 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
     cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
     max_page = 500
-    website_metas = {'LAW_CAT': [], 'ORG': []}
     country_codes = []
 
     def __init__(self, website_id, force=False, **kw):
@@ -119,7 +118,7 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
 
     def close(self, spider):
         for key, contact in self.contacts.items():
-            for email in self.emails:
+            for email in spider.website_metas['EMAIL']:
                 if 'EMAIL' in contact:
                     break
                 possible_email = get_possible_email(contact['PERSON'], email)
@@ -128,23 +127,20 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
 
         for key, contact in self.contacts.items():
             if valid_contact(contact, 2):
-                contact_score = WebsiteContact.get_contact_score(contact, self.contacts)
+                contact_score = spider.get_contact_score(contact)
                 WebsiteContact.save_contact(self.website, contact, contact_score)
 
-        db_organizations = []
-        most_common_org = Counter(self.website_metas['ORG']).most_common(3)
-        for org in most_common_org:
-            website_meta = WebsiteMeta(website_id=self.website.id, meta_key='ORGANIZATION', meta_value=org[0],
-                                       count=org[1])
-            db_organizations.append(website_meta)
-        WebsiteMeta.objects.bulk_create(db_organizations, ignore_conflicts=True)
-
-        db_laws = []
-        counter_law_cats = Counter(self.website_metas['LAW_CAT'])
-        laws = {x: count for x, count in counter_law_cats.items() if count > 1}
-        for law_cat, count in laws.items():
-            db_laws.append(WebsiteMeta(website_id=self.website.id, meta_key='LAW_CAT', meta_value=law_cat, count=count))
-        WebsiteMeta.objects.bulk_create(db_laws, ignore_conflicts=True)
+        meta_keys = {'LAW_CAT': None, 'EMAIL': 10, 'PHONE': 10, 'ORG': 3}
+        for meta_key, max_items in meta_keys.items():
+            if meta_key not in self.website_metas:
+                continue
+            db_metas = []
+            counter_metas = Counter(self.website_metas[meta_key]).most_common(max_items)
+            metas = {x: count for x, count in counter_metas if count > 1}
+            for meta, count in metas.items():
+                db_metas.append(
+                    WebsiteMeta(website_id=self.website.id, meta_key=meta_key, meta_value=meta, count=count))
+            WebsiteMeta.objects.bulk_create(db_metas, ignore_conflicts=True)
 
         if self.url:
             self.website.contact_state = 'finished'

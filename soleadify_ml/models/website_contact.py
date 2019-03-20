@@ -28,7 +28,8 @@ class WebsiteContact(models.Model):
         db_table = 'website_contacts'
 
     @staticmethod
-    def add_contact(contact, contacts, spider, from_tuple=True):
+    def add_contact(contact, spider, from_tuple=True):
+        contacts = spider.contacts
         new_contact = {}
         if from_tuple:
             for key, contact_part in contact.items():
@@ -45,13 +46,6 @@ class WebsiteContact(models.Model):
 
         new_contact['URL'] = contact['URL']
         new_contact['PERSON'] = new_name.title()
-
-        if 'EMAIL' in new_contact:
-            emails = new_contact['EMAIL']
-
-            for email in emails:
-                if email in spider.emails:
-                    spider.emails.remove(email)
 
         if 'TITLE' in new_contact:
             titles = new_contact['TITLE']
@@ -110,49 +104,4 @@ class WebsiteContact(models.Model):
                 website_contact_meta.update_phone_value(website.get_country_codes())
                 metas[key] = website_contact_meta
         WebsiteContactMeta.objects.bulk_create(metas.values(), ignore_conflicts=True)
-
-    @staticmethod
-    def get_contact_score(contact, contacts):
-        score = 0
-        if 'ORG' in contact:
-            score = score | WebsiteContact.score.has_org
-        if 'TITLE' in contact:
-            score = score | WebsiteContact.score.has_title
-        if 'PHONE' in contact:
-            score = score | WebsiteContact.score.has_phone
-        if 'EMAIL' in contact:
-            score = score | WebsiteContact.score.has_email
-
-        if 'PHONE' in contact:
-            phones = contact['PHONE']
-            duplicated_phones = []
-            for phone in phones:
-                for key, temp_contact in contacts.items():
-                    if temp_contact == contact:
-                        continue
-                    if 'PHONE' in temp_contact and phone in temp_contact['PHONE']:
-                        duplicated_phones.append(phone)
-                        break
-            if len(duplicated_phones) != len(phones):
-                score = score | WebsiteContact.score.has_unique_phone
-
-        if 'EMAIL' in contact:
-            emails = contact['EMAIL']
-            duplicated_emails = []
-            for email in emails:
-                for key, temp_contact in contacts.items():
-                    if temp_contact == contact:
-                        continue
-                    if 'EMAIL' in temp_contact and email in temp_contact['EMAIL']:
-                        duplicated_emails.append(email)
-                        break
-            if len(duplicated_emails) != len(emails):
-                score = score | WebsiteContact.score.has_unique_email
-
-        if 'EMAIL' in contact:
-            for email in contact['EMAIL']:
-                if get_possible_email(contact['PERSON'], email):
-                    score = score | WebsiteContact.score.has_matching_email
-                    break
-
-        return score
+        return website_contact

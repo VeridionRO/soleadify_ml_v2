@@ -35,35 +35,11 @@ class WebsitePagePipelineV2(object):
             p = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+')
             regex_emails = re.findall(p, response.text)
             valid_regex_emails = set({email for email in regex_emails if validate_email(email)})
-            spider.emails.extend(valid_regex_emails)
-
-            person_names = []
-            consecutive_persons = 0
-            previous_person = None
+            spider.website_metas['EMAIL'].extend(valid_regex_emails)
 
             logger.debug("%s - get names", response.url)
-            for ent in docs:
-                if ent['label'] == 'EMAIL':
-                    if ent['text'] not in spider.emails:
-                        spider.emails.append(ent['text'])
-                if ent['label'] in ['ORG', 'LAW_CAT']:
-                    spider.website_metas[ent['label']].append(ent['text'])
-                    continue
-                if ent['label'] == 'PERSON':
-                    if ent['text'] != previous_person:
-                        consecutive_persons += 1
+            person_names = spider.get_person_names(docs)
 
-                        if consecutive_persons < 3 and previous_person:
-                            person_names.append(previous_person)
-
-                        previous_person = ent['text']
-                else:
-                    consecutive_persons = 0
-
-            if previous_person:
-                person_names.append(previous_person)
-
-            person_names = set(person_names)
             for person_name in person_names:
                 if spider.contact_done(person_name, response.url):
                     continue
@@ -76,7 +52,7 @@ class WebsitePagePipelineV2(object):
                     if person and valid_contact(person):
                         person['URL'] = response.url
                         logger.debug(json.dumps(person))
-                        WebsiteContact.add_contact(person, spider.contacts, spider, False)
+                        WebsiteContact.add_contact(person, spider, False)
 
                         if spider.contact_done(person_name, response.url):
                             break
