@@ -126,7 +126,7 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
                 contact_score = spider.get_contact_score(contact)
                 WebsiteContact.save_contact(self.website, contact, contact_score)
 
-        meta_keys = {'LAW_CAT': None, 'EMAIL': 10, 'PHONE': 10, 'ORG': 3}
+        meta_keys = {'LAW_CAT': None, 'EMAIL': 5, 'PHONE': 5, 'ORG': 3}
         for meta_key, max_items in meta_keys.items():
             if meta_key not in self.website_metas:
                 continue

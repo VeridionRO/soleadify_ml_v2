@@ -120,6 +120,10 @@ class SpiderCommon:
             if len(duplicated_emails) != len(emails):
                 score = score | WebsiteContact.score.has_unique_email
 
+            unique_emails = list(set(emails) - set(duplicated_emails))
+            for unique_email in unique_emails:
+                self.remove_meta('EMAIL', unique_email)
+
         if 'EMAIL' in contact:
             for email in contact['EMAIL']:
                 if get_possible_email(contact['PERSON'], email):
