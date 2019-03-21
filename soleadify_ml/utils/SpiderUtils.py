@@ -170,7 +170,6 @@ def enough_for_a_person(spider, text, docs, contact_name):
             if len(new_contact_names) > 0:
                 contact['PERSON'] = new_contact_names
 
-        logger.debug("mama: " + ' - ' + json.dumps(contact))
         spider.temp_contacts[dom_element_text_key] = contact.copy()
 
     return contact
