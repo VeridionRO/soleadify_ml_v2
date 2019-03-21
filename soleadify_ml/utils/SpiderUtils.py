@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 from datetime import time
@@ -30,39 +31,46 @@ def check_spider_pipeline(process_item_method):
     return wrapper
 
 
-def get_text_from_element(element=None, html=None):
+def get_text_from_element(spider, element=None, html=None):
     if not html:
         html = etree.tostring(element).decode("utf-8")
-    converter = HTML2TextV2(bodywidth=0)
-    converter.ignore_images = True
-    converter.single_line_break = True
-    converter.inheader = True
-    converter.get_email_phone = True
-    converter.emphasis_mark = ' '
 
-    page_text = converter.handle(html)
+    text_key = hashlib.md5(html.encode()).hexdigest()
 
-    page_text = page_text.replace('(mailto:', ' ')
-    page_text = page_text.replace('mailto:', ' ')
-    page_text = page_text.replace('(tel:', ' ')
-    page_text = page_text.replace('tel:', ' ')
-    page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()$_\'|]+', ' ', page_text)
-    page_text = re.sub(r'(\s*\n\s*)+', '\n', page_text)
-    page_text = re.sub(r'\s\s+', ', ', page_text)
-    page_text = re.sub(r'\s\s+', ', ', page_text)
-    page_text = re.sub(r',+', ',', page_text)
-    page_text = re.sub(r', +', ', ', page_text)
+    if text_key in spider.texts:
+        return spider.texts[text_key]
+    else:
+        converter = HTML2TextV2(bodywidth=0)
+        converter.ignore_images = True
+        converter.single_line_break = True
+        converter.inheader = True
+        converter.get_email_phone = True
+        converter.emphasis_mark = ' '
 
-    if 'BEGIN:VCARD' in page_text:
-        page_text = page_text.replace(':', '\n')
+        page_text = converter.handle(html)
 
-    return page_text.strip()
+        page_text = page_text.replace('(mailto:', ' ')
+        page_text = page_text.replace('mailto:', ' ')
+        page_text = page_text.replace('(tel:', ' ')
+        page_text = page_text.replace('tel:', ' ')
+        page_text = re.sub(r'[^a-zA-Z0-9@\- ,.:\n&()$_\'|]+', ' ', page_text)
+        page_text = re.sub(r'(\s*\n\s*)+', '\n', page_text)
+        page_text = re.sub(r'\s\s+', ', ', page_text)
+        page_text = re.sub(r'\s\s+', ', ', page_text)
+        page_text = re.sub(r',+', ',', page_text)
+        page_text = re.sub(r', +', ', ', page_text)
+
+        if 'BEGIN:VCARD' in page_text:
+            page_text = page_text.replace(':', '\n')
+
+        spider.texts[text_key] = page_text.strip()
+        return spider.texts[text_key]
 
 
 def get_person_from_element(spider, person_name, dom_element, previous_contact=None, depth=1, page='',
                             previous_no=1, previous_dom_element_text=''):
     global added_time
-    dom_element_text = get_text_from_element(element=dom_element)
+    dom_element_text = get_text_from_element(spider, element=dom_element)
     t1 = time.time()
     required_no = 2
     docs = Command.get_entities(spider, dom_element_text, page)

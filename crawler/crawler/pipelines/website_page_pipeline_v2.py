@@ -28,7 +28,7 @@ class WebsitePagePipelineV2(object):
             logger.debug("start page: %s", response.url)
             html = re.sub(r'\s\s+', ' ', response.text)
             new_response = HtmlResponse(url=response.url, body=html, encoding='utf8')
-            text = get_text_from_element(html=html)
+            text = get_text_from_element(spider, html=html)
             docs = Command.get_entities(spider, text, response.url)
 
             logger.debug("%s - get emails", response.url)

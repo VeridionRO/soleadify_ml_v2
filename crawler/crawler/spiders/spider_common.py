@@ -9,6 +9,7 @@ logger = logging.getLogger('soleadify_ml')
 
 
 class SpiderCommon:
+    texts = {}
     contacts = {}
     temp_contacts = {}
     max_pages = 500
