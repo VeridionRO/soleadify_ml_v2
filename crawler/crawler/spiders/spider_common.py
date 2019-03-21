@@ -29,9 +29,9 @@ class SpiderCommon:
         return False
 
     def get_person_dom_elements(self, response, person_name):
-        person_elements = response.xpath('//*[contains(text(),"%s")]' % person_name)
+        person_elements = response.xpath('//body//*[contains(text(),"%s")]' % person_name)
         if len(person_elements) == 0:
-            person_elements = response.xpath('//*[contains(.,"%s")]' % person_name)
+            person_elements = response.xpath('//body//*[contains(.,"%s")]' % person_name)
             if len(person_elements) > 0:
                 person_elements = [person_elements[-1]]
             else:
@@ -39,7 +39,7 @@ class SpiderCommon:
                 if 'Surname' in pp_name:
                     pass
                     if 'GivenName' in pp_name:
-                        xpath = '//*[contains(.,"%s") and contains(.,"%s")]' % \
+                        xpath = '//body//*[contains(.,"%s") and contains(.,"%s") and count(ancestor::*) >= 10]' % \
                                 (pp_name['Surname'], pp_name['GivenName'])
                         person_elements = response.xpath(xpath)
                         if len(person_elements) > 0:

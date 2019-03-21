@@ -112,7 +112,6 @@ class Command(BaseCommand):
         try:
             if dom_element_text_key in spider.cached_docs:
                 new_docs = spider.cached_docs[dom_element_text_key]
-                logger.debug("cached : %s", url)
             else:
                 spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
                 docs = json.loads(recv_end(spider.soc_spacy))

@@ -2,7 +2,6 @@ import json
 import socket
 import scrapy
 import spacy
-import re
 from django.conf import settings
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
@@ -39,7 +38,7 @@ class TagLinkSpider(scrapy.Spider):
         super().__init__(**kwargs)
 
     def parse(self, response):
-        yield WebsitePageItem({'text': get_text_from_element(response.text), 'link': response.url})
+        yield WebsitePageItem({'text': get_text_from_element(html=response.text), 'link': response.url})
 
     def close(self, spider):
         with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/1.json', 'w') as the_file:

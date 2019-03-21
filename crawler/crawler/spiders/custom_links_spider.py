@@ -17,4 +17,4 @@ class CustomLinksSpider(scrapy.Spider):
         super().__init__(**kwargs)
 
     def parse(self, response):
-        yield {'text': get_text_from_element(response.text), 'url': response.url}
+        yield {'text': get_text_from_element(html=response.text), 'url': response.url}
