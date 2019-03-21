@@ -33,9 +33,12 @@ class WebsitePagePipelineV2(object):
 
             logger.debug("%s - get emails", response.url)
             p = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+')
-            regex_emails = re.findall(p, html)
-            valid_regex_emails = set({email for email in regex_emails if validate_email(email)})
-            spider.website_metas['EMAIL'].update(valid_regex_emails)
+            parts = response.text.split('\n')
+            for part in parts:
+                if '@' in part:
+                    regex_emails = re.findall(p, part)
+                    valid_regex_emails = set({email for email in regex_emails if validate_email(email)})
+                    spider.website_metas['EMAIL'].update(valid_regex_emails)
 
             logger.debug("%s - get names", response.url)
             person_names = spider.get_person_names(docs)

@@ -93,7 +93,7 @@ class HTML2TextV2(HTML2Text):
             else:
                 self.style -= 1
 
-        if tag in ["body"]:
+        if tag in ["body", "title"]:
             self.quiet = 0  # sites like 9rules.com never close <head>
 
         if tag == "blockquote":

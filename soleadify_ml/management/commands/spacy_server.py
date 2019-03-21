@@ -111,24 +111,25 @@ class Command(BaseCommand):
         dom_element_text_key = hashlib.md5(text.encode()).hexdigest()
         try:
             if dom_element_text_key in spider.cached_docs:
-                docs = spider.cached_docs[dom_element_text_key]
+                new_docs = spider.cached_docs[dom_element_text_key]
                 logger.debug("cached : %s", url)
             else:
                 spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
                 docs = json.loads(recv_end(spider.soc_spacy))
-                spider.cached_docs[dom_element_text_key] = docs
+
+                for doc in docs:
+                    # if the phone is not valid for the country ignore it
+                    if doc['label'] == 'PHONE':
+                        valid_phone = WebsiteContactMeta.get_valid_country_phone(spider.country_codes, doc['text'])
+                        if valid_phone:
+                            doc['text'] = valid_phone
+                        else:
+                            continue
+                    new_docs.append(doc)
+
+                spider.cached_docs[dom_element_text_key] = new_docs
         except Exception as ve:
             logger.error("%s : %s", url, ve)
             return new_docs
-
-        for doc in docs:
-            # if the phone is not valid for the country ignore it
-            if doc['label'] == 'PHONE':
-                valid_phone = WebsiteContactMeta.get_valid_country_phone(spider.country_codes, doc['text'])
-                if valid_phone:
-                    doc['text'] = valid_phone
-                else:
-                    continue
-            new_docs.append(doc)
 
         return new_docs

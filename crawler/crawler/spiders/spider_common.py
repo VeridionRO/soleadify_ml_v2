@@ -10,6 +10,7 @@ logger = logging.getLogger('soleadify_ml')
 
 class SpiderCommon:
     contacts = {}
+    temp_contacts = {}
     max_pages = 500
     website_metas = {
         'EMAIL': Counter(),

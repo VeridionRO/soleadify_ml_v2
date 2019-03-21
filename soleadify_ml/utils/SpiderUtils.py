@@ -1,3 +1,4 @@
+import hashlib
 import json
 import logging
 from datetime import time
@@ -69,7 +70,7 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
     added_time += time.time() - t1
     logger.debug(page + ' - ' + str(added_time))
 
-    contact = enough_for_a_person(docs, person_name)
+    contact = enough_for_a_person(spider, dom_element_text, docs, person_name)
 
     if contact and previous_contact and 'PERSON' in previous_contact and 'PERSON' in contact and len(
             previous_contact['PERSON']) > 0 and len(previous_contact['PERSON']) < len(contact['PERSON']):
@@ -104,63 +105,73 @@ def get_person_from_element(spider, person_name, dom_element, previous_contact=N
             return contact
 
 
-def enough_for_a_person(docs, contact_name):
-    contact = entities_to_contact(docs)
+def enough_for_a_person(spider, text, docs, contact_name):
+    dom_element_text_key = hashlib.md5(text.encode()).hexdigest()
 
-    # this resolves the case when we are on the page of an person and on that page there is mention to another person
-    if 'PERSON' in contact and 'EMAIL' in contact and len(contact['EMAIL']) == 1 and len(contact['PERSON']) > 1:
-        for current_contact_name in contact['PERSON']:
-            possible_email = get_possible_email(current_contact_name, contact['EMAIL'][0])
-            if possible_email:
-                current_person_lines = [doc['line_no'] for doc in docs if
-                                        current_contact_name.lower() == doc['text'].lower()]
-                has_person = False
-                temp_person_docs = []
-                prev_line = 0
-                new_docs = docs.copy()
-                for doc in docs:
-                    if prev_line and prev_line != doc['line_no']:
-                        if prev_line not in current_person_lines and has_person:
-                            for temp_person_doc in temp_person_docs:
-                                new_docs.remove(temp_person_doc)
-                        temp_person_docs = []
-                        has_person = False
-                    if doc['label'] == 'PERSON':
-                        has_person = True
-                    prev_line = doc['line_no']
-                    temp_person_docs.append(doc)
-                contact = entities_to_contact(new_docs)
-                contact['PERSON'] = [current_contact_name]
-                contact['EMAIL'] = [contact['EMAIL'][0]]
-                break
+    if dom_element_text_key in spider.temp_contacts:
+        contact = spider.temp_contacts[dom_element_text_key].copy()
+    else:
+        contact = entities_to_contact(docs)
 
-    if 'PERSON' in contact and len(contact['PERSON']) >= 2:
-        new_contact_names = []
-        duplicate = False
-        for contact_name_2 in contact['PERSON']:
-            if contact_name == contact_name_2:
-                continue
+        # this resolves the case when we are on the page of an person and on
+        # that page there is mention to another person
+        if 'PERSON' in contact and 'EMAIL' in contact and len(contact['EMAIL']) == 1 and len(contact['PERSON']) > 1:
+            for current_contact_name in contact['PERSON']:
+                possible_email = get_possible_email(current_contact_name, contact['EMAIL'][0])
+                if possible_email:
+                    current_person_lines = [doc['line_no'] for doc in docs if
+                                            current_contact_name.lower() == doc['text'].lower()]
+                    has_person = False
+                    temp_person_docs = []
+                    prev_line = 0
+                    new_docs = docs.copy()
+                    for doc in docs:
+                        if prev_line and prev_line != doc['line_no']:
+                            if prev_line not in current_person_lines and has_person:
+                                for temp_person_doc in temp_person_docs:
+                                    new_docs.remove(temp_person_doc)
+                            temp_person_docs = []
+                            has_person = False
+                        if doc['label'] == 'PERSON':
+                            has_person = True
+                        prev_line = doc['line_no']
+                        temp_person_docs.append(doc)
+                    contact = entities_to_contact(new_docs)
+                    contact['PERSON'] = [current_contact_name]
+                    if 'EMAIL' in possible_email:
+                        contact['EMAIL'] = [possible_email['EMAIL']]
+                    break
 
-            name_keys = ['GivenName', 'Surname']
-            pp_name = pp_contact_name({'PERSON': contact_name})
-            pp_name_2 = pp_contact_name({'PERSON': contact_name_2})
+        if 'PERSON' in contact and len(contact['PERSON']) >= 2:
+            new_contact_names = []
+            duplicate = False
+            for contact_name_2 in contact['PERSON']:
+                if contact_name == contact_name_2:
+                    continue
 
-            pp_name_keys = list(set(name_keys) & set(pp_name.keys()))
-            pp_name_2_keys = list(set(name_keys) & set(pp_name_2.keys()))
+                name_keys = ['GivenName', 'Surname']
+                pp_name = pp_contact_name({'PERSON': contact_name})
+                pp_name_2 = pp_contact_name({'PERSON': contact_name_2})
 
-            if len(pp_name_keys) > 1 and len(pp_name_2_keys) > 1 and \
-                    pp_name['GivenName'] == pp_name_2['GivenName'] and pp_name['Surname'] == pp_name_2['Surname']:
-                new_contact_name = contact_name if len(contact_name) > len(contact_name_2) else contact_name_2
-                if new_contact_name not in new_contact_names:
+                pp_name_keys = list(set(name_keys) & set(pp_name.keys()))
+                pp_name_2_keys = list(set(name_keys) & set(pp_name_2.keys()))
+
+                if len(pp_name_keys) > 1 and len(pp_name_2_keys) > 1 and \
+                        pp_name['GivenName'] == pp_name_2['GivenName'] and pp_name['Surname'] == pp_name_2['Surname']:
+                    new_contact_name = contact_name if len(contact_name) > len(contact_name_2) else contact_name_2
+                    if new_contact_name not in new_contact_names:
+                        new_contact_names.append(contact_name)
+                        duplicate = True
+                else:
+                    new_contact_names.append(contact_name_2)
+                if not duplicate:
                     new_contact_names.append(contact_name)
-                    duplicate = True
-            else:
-                new_contact_names.append(contact_name_2)
-            if not duplicate:
-                new_contact_names.append(contact_name)
 
-        if len(new_contact_names) > 0:
-            contact['PERSON'] = new_contact_names
+            if len(new_contact_names) > 0:
+                contact['PERSON'] = new_contact_names
+
+        logger.debug("mama: " + ' - ' + json.dumps(contact))
+        spider.temp_contacts[dom_element_text_key] = contact.copy()
 
     return contact
 
