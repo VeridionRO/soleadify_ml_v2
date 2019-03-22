@@ -13,7 +13,7 @@ from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
 from soleadify_ml.models.website import Website
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import get_possible_email, valid_contact
+from soleadify_ml.utils.SpiderUtils import get_possible_email
 
 logger = logging.getLogger('soleadify_ml')
 
@@ -26,12 +26,9 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
     pipeline = [WebsitePagePipelineV2]
     secondary_contacts = {}
     website = None
-    soc_spacy = None
     url = None
     cached_links = {}
-    cached_docs = {}
     ignored_links = ['tel:', 'mailto:']
-    country_codes = []
 
     def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
@@ -122,7 +119,7 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
                     contact['EMAIL'] = [possible_email['email']]
 
         for key, contact in self.contacts.items():
-            if valid_contact(contact, 2):
+            if WebsiteContact.valid_contact(contact, 2):
                 contact_score = spider.get_contact_score(contact)
                 WebsiteContact.save_contact(self.website, contact, contact_score)
 

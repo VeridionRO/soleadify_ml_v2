@@ -1,5 +1,5 @@
 import re
-from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_text_from_element
+from soleadify_ml.utils.SpiderUtils import check_spider_pipeline
 
 
 class CustomLinkPipeline(object):

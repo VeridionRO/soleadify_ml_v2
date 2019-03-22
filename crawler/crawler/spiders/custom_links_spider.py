@@ -1,10 +1,10 @@
 import scrapy
 
 from crawler.pipelines.custom_link_pipeline import CustomLinkPipeline
-from soleadify_ml.utils.SpiderUtils import get_text_from_element
+from crawler.spiders.spider_common import SpiderCommon
 
 
-class CustomLinksSpider(scrapy.Spider):
+class CustomLinksSpider(scrapy.Spider, SpiderCommon):
     name = 'CustomLinksSpider'
     allowed_domains = ['*']
     start_urls = []
@@ -17,4 +17,4 @@ class CustomLinksSpider(scrapy.Spider):
         super().__init__(**kwargs)
 
     def parse(self, response):
-        yield {'text': get_text_from_element(html=response.text), 'url': response.url}
+        yield {'text': self.get_text_from_element(html=response.text), 'url': response.url}

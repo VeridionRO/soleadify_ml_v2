@@ -4,7 +4,7 @@ import re
 from bitfield import BitField
 from django.db import models
 from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
-from soleadify_ml.utils.SpiderUtils import pp_contact_name, merge_dicts, get_possible_email
+from soleadify_ml.utils.SpiderUtils import pp_contact_name, merge_dicts
 
 
 class WebsiteContact(models.Model):
@@ -105,3 +105,36 @@ class WebsiteContact(models.Model):
                 metas[key] = website_contact_meta
         WebsiteContactMeta.objects.bulk_create(metas.values(), ignore_conflicts=True)
         return website_contact
+
+    @staticmethod
+    def valid_contact(contact, length=1, has_contact=False):
+        """
+        check if a contact array is valid
+        :param contact:
+        :param length:
+        :param has_contact:
+        :return:
+        """
+        if not contact:
+            return False
+
+        important_keys = ['PERSON', 'TITLE', 'EMAIL', 'PHONE']
+        has_contacts_keys = ['EMAIL', 'PHONE']
+        contact_keys = contact.keys()
+        important_keys_intersection = list(set(important_keys) & set(contact_keys))
+
+        if has_contact:
+            has_contact_keys_intersection = list(set(contact_keys) & set(has_contacts_keys))
+            if len(has_contact_keys_intersection) == 0:
+                return False
+
+        if len(important_keys_intersection) < length:
+            return False
+
+        if 'PERSON' not in contact:
+            return False
+        else:
+            if len(contact['PERSON']) > 1 and not isinstance(contact['PERSON'], str):
+                return False
+
+        return True

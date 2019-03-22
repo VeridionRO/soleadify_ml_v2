@@ -6,13 +6,13 @@ from django.conf import settings
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
 
+from crawler.spiders.spider_common import SpiderCommon
 from soleadify_ml.utils.SocketUtils import connect
 from crawler.pipelines.tag_link_pipeline import TagLinkPipeline
 from crawler.items import WebsitePageItem
-from soleadify_ml.utils.SpiderUtils import get_text_from_element
 
 
-class TagLinkSpider(scrapy.Spider):
+class TagLinkSpider(scrapy.Spider, SpiderCommon):
     name = 'TagLinkSpider'
     allowed_domains = ['*']
     start_urls = []
@@ -38,7 +38,7 @@ class TagLinkSpider(scrapy.Spider):
         super().__init__(**kwargs)
 
     def parse(self, response):
-        yield WebsitePageItem({'text': get_text_from_element(html=response.text), 'link': response.url})
+        yield WebsitePageItem({'text': self.get_text_from_element(html=response.text), 'link': response.url})
 
     def close(self, spider):
         with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/1.json', 'w') as the_file:

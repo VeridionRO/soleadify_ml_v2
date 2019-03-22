@@ -5,11 +5,12 @@ import tldextract
 from django.conf import settings
 
 from crawler.spiders.spider_common import SpiderCommon
+from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
 from crawler.items import WebsitePageItem
 from crawler.pipelines.website_page_pipeline_v2 import WebsitePagePipelineV2
-from soleadify_ml.utils.SpiderUtils import get_possible_email, valid_contact
+from soleadify_ml.utils.SpiderUtils import get_possible_email
 
 
 class CustomWebsiteSpider(scrapy.Spider, SpiderCommon):
@@ -46,7 +47,7 @@ class CustomWebsiteSpider(scrapy.Spider, SpiderCommon):
                 possible_email = get_possible_email(contact['PERSON'], email)
                 if possible_email:
                     contact['EMAIL'] = [possible_email['email']]
-            if valid_contact(contact, 2):
+            if WebsiteContact.valid_contact(contact, 2):
                 contact.pop('URL', None)
                 print(contact)
 

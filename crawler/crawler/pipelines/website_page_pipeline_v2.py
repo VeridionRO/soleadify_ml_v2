@@ -1,13 +1,9 @@
 import logging
 import json
 import re
-
 from validate_email import validate_email
-
-from soleadify_ml.management.commands.spacy_server import Command
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, get_person_from_element, get_text_from_element, \
-    valid_contact
+from soleadify_ml.utils.SpiderUtils import check_spider_pipeline
 from scrapy.http import HtmlResponse
 
 logger = logging.getLogger('soleadify_ml')
@@ -28,8 +24,8 @@ class WebsitePagePipelineV2(object):
             logger.debug("start page: %s", response.url)
             html = re.sub(r'\s\s+', ' ', response.text)
             new_response = HtmlResponse(url=response.url, body=html, encoding='utf8')
-            text = get_text_from_element(spider, html=html)
-            docs = Command.get_entities(spider, text, response.url)
+            text = spider.get_text_from_element(spider, html=html)
+            docs = spider.get_entities(text, response.url)
 
             logger.debug("%s - get emails", response.url)
             p = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+')
@@ -51,8 +47,8 @@ class WebsitePagePipelineV2(object):
 
                 for person_element in person_elements:
                     logger.debug("%s - processing names: %s", response.url, person_name)
-                    person = get_person_from_element(spider, person_name, person_element.root, page=response.url)
-                    if person and valid_contact(person):
+                    person = spider.get_person_from_element(person_name, person_element.root, page=response.url)
+                    if person and WebsiteContact.valid_contact(person):
                         person['URL'] = response.url
                         logger.debug(json.dumps(person))
                         WebsiteContact.add_contact(person, spider, False)

@@ -1,4 +1,3 @@
-import hashlib
 import logging
 import spacy
 from django.conf import settings
@@ -9,8 +8,6 @@ from select import select
 
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
-
-from soleadify_ml.models.website_contact_meta import WebsiteContactMeta
 from soleadify_ml.utils.SocketUtils import recv_end, socket_bind
 
 logger = logging.getLogger('spacy')
@@ -18,7 +15,6 @@ logger = logging.getLogger('spacy')
 
 class Command(BaseCommand):
     help = 'spacy server'
-    line_numbers = []
 
     def handle(self, *args, **options):
         spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER, disable=['parser', 'tagger', 'textcat'])
@@ -101,34 +97,3 @@ class Command(BaseCommand):
 
         return {'label': current_entity.label_, 'text': text.strip(), 'start': current_entity.start,
                 'end': current_entity.end, 'line_no': current_entity._.get('line_number')}
-
-    @staticmethod
-    def get_entities(spider, text, url):
-        new_docs = []
-        Command.line_numbers = []
-        if not text:
-            return new_docs
-        dom_element_text_key = hashlib.md5(text.encode()).hexdigest()
-        try:
-            if dom_element_text_key in spider.cached_docs:
-                new_docs = spider.cached_docs[dom_element_text_key]
-            else:
-                spider.soc_spacy.sendall(text.encode('utf8') + '--end--'.encode('utf8'))
-                docs = json.loads(recv_end(spider.soc_spacy))
-
-                for doc in docs:
-                    # if the phone is not valid for the country ignore it
-                    if doc['label'] == 'PHONE':
-                        valid_phone = WebsiteContactMeta.get_valid_country_phone(spider.country_codes, doc['text'])
-                        if valid_phone:
-                            doc['text'] = valid_phone
-                        else:
-                            continue
-                    new_docs.append(doc)
-
-                spider.cached_docs[dom_element_text_key] = new_docs
-        except Exception as ve:
-            logger.error("%s : %s", url, ve)
-            return new_docs
-
-        return new_docs
