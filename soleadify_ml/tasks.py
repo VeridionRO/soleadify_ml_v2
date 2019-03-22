@@ -1,5 +1,3 @@
-from threading import Thread
-
 from scrapy.crawler import CrawlerProcess
 from crawler.spiders.website_spider import WebsiteSpider
 from soleadify_ml.celery import app
