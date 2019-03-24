@@ -3,12 +3,13 @@ import socket
 import scrapy
 from django.conf import settings
 
+from crawler.spiders.spider_common import SpiderCommon
 from soleadify_ml.utils.SocketUtils import connect
 from crawler.pipelines.tag_link_pipeline import TagLinkPipeline
 from crawler.items import WebsitePageItem
 
 
-class TagLinkSpider(scrapy.Spider):
+class TagLinkSpider(scrapy.Spider, SpiderCommon):
     name = 'TagLinkSpider'
     allowed_domains = ['*']
     start_urls = []
@@ -21,10 +22,11 @@ class TagLinkSpider(scrapy.Spider):
 
     def __init__(self, links, **kwargs):
         self.start_urls.append(links)
-        # self.start_urls = []
+
         import spacy
         from spacy.tokens.doc import Doc
         from spacy.tokens.span import Span
+
         self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
         Span.set_extension('line_number', getter=TagLinkSpider.line_number_getter, force=True)
         Doc.set_extension('lines', getter=TagLinkSpider.get_lines, setter=TagLinkSpider.set_lines)

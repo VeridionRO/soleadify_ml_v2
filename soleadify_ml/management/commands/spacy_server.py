@@ -9,6 +9,7 @@ from select import select
 from spacy.tokens.doc import Doc
 from spacy.tokens.span import Span
 from soleadify_ml.utils.SocketUtils import recv_end, socket_bind
+from soleadify_ml.utils.SpiderUtils import check_email
 
 logger = logging.getLogger('spacy')
 
@@ -93,6 +94,9 @@ class Command(BaseCommand):
                 return None
 
             if len(text) <= 7:
+                return None
+
+            if not check_email(text):
                 return None
 
         return {'label': current_entity.label_, 'text': text.strip(), 'start': current_entity.start,

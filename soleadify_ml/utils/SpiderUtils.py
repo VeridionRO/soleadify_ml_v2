@@ -3,7 +3,10 @@ import logging
 import functools
 import re
 import probablepeople as pp
+import tldextract
 from email_split import email_split
+
+from soleadify_ml import settings
 
 logger = logging.getLogger('soleadify_ml')
 contacts = {}
@@ -100,9 +103,52 @@ def get_possible_email(contact_name, email):
     return None
 
 
+valid_emails = {}
+
+
+def check_email(email):
+    global valid_emails
+
+    if email in valid_emails:
+        return valid_emails[email]
+
+    p = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z-.]{2,}')
+    ignored_suffixes = ['gif', 'jpg', 'png', 'swf', 'psd', 'bmp', 'tiff', 'tiff', 'jpc', 'jp2',
+                        'jpf', 'jb2', 'swc', 'aiff', 'wbmp', 'xbm', 'pdf', 'jpeg', 'docx', 'json', 'doc']
+    if not re.search(p, email):
+        logger.debug("ignored email regex %s", email)
+        valid_emails[email] = False
+        return None
+
+    tld_domain = tldextract.extract(email)
+    if hasattr(tld_domain, 'suffix'):
+        suffix = tld_domain.suffix
+        if suffix in ignored_suffixes:
+            logger.debug("ignored email suffix %s", email)
+            valid_emails[email] = False
+            return None
+
+    if hasattr(tld_domain, 'domain'):
+        domain = tld_domain.domain
+        if domain in ignored_suffixes:
+            logger.debug("ignored email domain %s", email)
+            valid_emails[email] = False
+            return None
+
+    with open(settings.STOP_EMAILS_FILE) as f:
+        stop_emails_file = json.load(f)
+        if email in stop_emails_file:
+            logger.debug("ignored email stop_emails %s", email)
+            valid_emails[email] = False
+            return None
+
+    valid_emails[email] = True
+    return email
+
+
 def merge_dicts(dic1, dic2):
     for key, values2 in dic2.items():
-        if key in ['ORG', 'TITLE', 'EMAIL', 'PHONE', 'PERSON']:
+        if key in ['ORG', 'TITLE', 'EMAIL', 'PHONE', 'PERSON', 'LAW_CAT']:
             if key in dic1:
                 values1 = dic1[key]
                 if not isinstance(values1, list) and not isinstance(values2, list):

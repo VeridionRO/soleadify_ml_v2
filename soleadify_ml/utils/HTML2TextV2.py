@@ -380,7 +380,7 @@ class HTML2TextV2(HTML2Text):
                             self.o("  \n")
                 if tag in ["td", "th"] and start:
                     if self.split_next_td:
-                        self.o(" | ")
+                        self.o(" ")
                     self.split_next_td = True
 
                 if tag == "tr" and start:

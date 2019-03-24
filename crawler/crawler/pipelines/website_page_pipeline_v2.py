@@ -1,9 +1,8 @@
 import logging
 import json
 import re
-from validate_email import validate_email
 from soleadify_ml.models.website_contact import WebsiteContact
-from soleadify_ml.utils.SpiderUtils import check_spider_pipeline
+from soleadify_ml.utils.SpiderUtils import check_spider_pipeline, check_email
 from scrapy.http import HtmlResponse
 
 logger = logging.getLogger('soleadify_ml')
@@ -33,7 +32,7 @@ class WebsitePagePipelineV2(object):
             for part in parts:
                 if '@' in part:
                     regex_emails = re.findall(p, part)
-                    valid_regex_emails = set({email for email in regex_emails if validate_email(email)})
+                    valid_regex_emails = set({email for email in regex_emails if check_email(email)})
                     spider.website_metas['EMAIL'].update(valid_regex_emails)
 
             logger.debug("%s - get names", response.url)

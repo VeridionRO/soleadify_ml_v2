@@ -56,8 +56,6 @@ class SpiderCommon:
                         xpath = '//body//*[contains(.,"%s") and contains(.,"%s") and count(ancestor::*) >= 10]' % \
                                 (pp_name['Surname'], pp_name['GivenName'])
                         person_elements = response.xpath(xpath)
-                        if len(person_elements) > 0:
-                            person_elements = [person_elements[-1]]
 
         return person_elements
 
@@ -222,7 +220,7 @@ class SpiderCommon:
                                 previous_dom_element_text=''):
         dom_element_text = self.get_text_from_element(element=dom_element)
         t1 = time.time()
-        required_no = 2
+        required_no = 1
         docs = self.get_entities(dom_element_text, page)
         self.added_time += time.time() - t1
         logger.debug(page + ' - ' + str(self.added_time))
