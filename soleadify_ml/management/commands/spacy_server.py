@@ -88,15 +88,15 @@ class Command(BaseCommand):
             if not current_entity.root.like_email:
                 return None
 
+            if not check_email(text):
+                return None
+
         if current_entity.label_ == 'PHONE':
             text = re.sub('\D', '', text)
             if not current_entity._.get('is_phone'):
                 return None
 
             if len(text) <= 7:
-                return None
-
-            if not check_email(text):
                 return None
 
         return {'label': current_entity.label_, 'text': text.strip(), 'start': current_entity.start,
