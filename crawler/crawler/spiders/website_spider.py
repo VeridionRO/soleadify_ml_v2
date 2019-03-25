@@ -90,23 +90,21 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
         priority_pages = {'vcard': 11, 'vcf': 11, 'meet': 10, 'team': 9, 'staff': 8, 'people': 7, 'member': 6,
                           'detail': 5, 'directory': 4, 'contact': 3, 'about': 2, 'find': 1}
         if isinstance(response, HtmlResponse):
-            def sort_links(current_link):
-                url = current_link.url.lower()
-                url_text = current_link.text
-                for key, value in priority_pages.items():
-                    if key in url or key in url_text:
-                        return value
-                return 0
-
             links = self.link_extractor.extract_links(response)
-            links = sorted(links, key=sort_links, reverse=True)
             for link in links:
                 if self.max_pages >= 0 and not self.is_ignored(link.url) and link.url not in self.cached_links:
                     parsed_links.append(link)
                     self.cached_links[link.url] = True
                     self.max_pages -= 1
-
-            r.extend(Request(x.url, callback=self.parse) for x in parsed_links)
+            for x in parsed_links:
+                url = x.url.lower()
+                url_text = x.text
+                priority = 0
+                for priority_page, value in priority_pages.items():
+                    if priority_page in url or priority_page in url_text:
+                        priority = value
+                        break
+                r.append(Request(x.url, callback=self.parse, priority=priority))
         return r
 
     def close(self, spider):
