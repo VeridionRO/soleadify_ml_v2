@@ -21,9 +21,11 @@ class FilterResponses(object):
         filtering regexs
         """
         type_whitelist = (r'text',)
-        content_type_header = response.headers.get('content-type', None).decode("utf-8")
+        content_type_header = response.headers.get('content-type', None)
         if not content_type_header or not type_whitelist:
             return response
+
+        content_type_header = content_type_header.decode("utf-8")
 
         if self.is_valid_response(type_whitelist, content_type_header):
             return response
