@@ -39,7 +39,13 @@ class TagLinkSpider(scrapy.Spider, SpiderCommon):
         super().__init__(**kwargs)
 
     def parse(self, response):
-        yield WebsitePageItem({'text': self.get_text_from_element(html=response.text), 'link': response.url})
+        for file in ["Associate at A Center For Children & Family Law", "Attorney at David A. Mahl, Esq.",
+                     "Chair, Restaurant Sector Team at Akerman LLP", "Counsel at Day Pitney LLP",
+                     "Counsel at Grey & Grey, LLP", "Managing Partner at Townsend & Lockett",
+                     "Member at Aber, Goldlust, Baker & Over", "Partner at Law Offices of Johnson, Crump, Walters,",
+                     "Principal at The Law Firm of L. Palmer Foret, P.C.", "Staff Attorney at The Crone Law Firm, PLC"]:
+            with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/' + file) as the_file:
+                yield WebsitePageItem({'text': the_file.read(), 'link': ''})
 
     def close(self, spider):
         with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/1.json', 'w') as the_file:

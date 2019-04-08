@@ -31,8 +31,11 @@ class Website(models.Model):
         return pages
 
     def extract_contact(self, dirty_contact, score):
-        website_contact = WebsiteContact.objects.filter(website_id=self.id, name=dirty_contact['PERSON']).first()
         pp_contact_name(dirty_contact)
+        first_name = dirty_contact['GivenName'] if 'GivenName' in dirty_contact else None
+        last_name = dirty_contact['Surname'] if 'Surname' in dirty_contact else None
+        website_contact = WebsiteContact.objects.filter(website_id=self.id, first_name=first_name,
+                                                        last_name=last_name).first()
         if not website_contact:
             website_contact = WebsiteContact(
                 website_id=self.id, name=dirty_contact['PERSON'],
@@ -40,6 +43,8 @@ class Website(models.Model):
                 last_name=dirty_contact['Surname'] if 'Surname' in dirty_contact else None,
                 middle_name=dirty_contact['MiddleName'] if 'MiddleName' in dirty_contact else None,
                 score=score)
+        else:
+            website_contact.score = website_contact.score | score
 
         dirty_contact.pop('PERSON', None)
         dirty_contact.pop('GivenName', None)
@@ -60,3 +65,6 @@ class Website(models.Model):
                 self.country_codes.append(country_code['country_code'].upper())
 
         return self.country_codes
+
+    def get_link(self):
+        return self.redirect_link if self.redirect_link else self.link

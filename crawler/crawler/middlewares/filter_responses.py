@@ -20,7 +20,7 @@ class FilterResponses(object):
         Only allow HTTP response types that that match the given list of
         filtering regexs
         """
-        type_whitelist = (r'text',)
+        type_whitelist = (r'text', r'application/json')
         content_type_header = response.headers.get('content-type', None)
         if not content_type_header or not type_whitelist:
             return response

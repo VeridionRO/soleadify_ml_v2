@@ -39,7 +39,7 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
         connect(self.soc_spacy, '', settings.SPACY_PORT)
 
         if self.website and (self.website.contact_state == 'pending' or force):
-            self.url = self.website.link
+            self.url = self.website.get_link()
             self.link_extractor = LinkExtractor()
 
             self.website.contact_state = 'working'

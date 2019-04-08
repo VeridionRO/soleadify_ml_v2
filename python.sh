@@ -5,6 +5,9 @@ pip install spacy-nightly
 pip install django==2.0.3
 pip install celery
 pip install django_mysql
+apt-get install libmysqlclient-dev
+apt-get install python3.7-dev
+apt-get install gcc
 pip install mysqlclient
 pip install git+https://github.com/mihaivinaga/geograpy.git
 pip install scrapy

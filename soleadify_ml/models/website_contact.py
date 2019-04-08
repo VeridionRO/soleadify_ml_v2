@@ -9,6 +9,7 @@ from soleadify_ml.utils.SpiderUtils import pp_contact_name, merge_dicts
 
 class WebsiteContact(models.Model):
     models.AutoField(primary_key=True)
+    id = models.IntegerField(primary_key=True)
     website_id = models.IntegerField()
     name = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
@@ -94,8 +95,7 @@ class WebsiteContact(models.Model):
         metas = {}
         url = contact['URL']
         website_contact = website.extract_contact(contact, score)
-        if not website_contact.id:
-            website_contact.save()
+        website_contact.save()
         for _type, items in contact.items():
             for item in items:
                 key = str(website_contact.id) + str(_type) + str(item)

@@ -100,6 +100,12 @@ def get_possible_email(contact_name, email):
             pattern = possible_pattern
             return {'pattern': pattern, 'email': possible_email}
 
+    domain_split = email.split('@')
+    if len(domain_split):
+        email_domain = domain_split[0]
+        if surname and given_name and surname in email_domain and given_name in email_domain:
+            return {'pattern': '_surname_given_name_', 'email': email}
+
     return None
 
 
