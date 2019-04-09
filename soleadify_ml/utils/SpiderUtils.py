@@ -38,7 +38,7 @@ def title_except(s):
 
 
 def pp_contact_name(contact, leave_case=False):
-    split_name_parts = pp.parse(contact['PERSON'])
+    split_name_parts = pp.parse(contact['PERSON'], type='person')
     for split_name_part in split_name_parts:
         if split_name_part[1] in ['GivenName', 'Surname', 'MiddleName']:
             name = re.sub(r"[^a-zA-Z-']+", '', split_name_part[0])
@@ -49,7 +49,7 @@ def pp_contact_name(contact, leave_case=False):
 def get_possible_email(contact_name, email):
     split_name_parts = []
     try:
-        split_name_parts = pp.parse(contact_name)
+        split_name_parts = pp.parse(contact_name, type='person')
     except TypeError as e:
         logger.error("possible_email: " + str(e) + ' - ' + json.dumps(contact_name))
     given_name = ''
