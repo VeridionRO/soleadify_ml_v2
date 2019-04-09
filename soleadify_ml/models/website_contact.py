@@ -8,7 +8,6 @@ from soleadify_ml.utils.SpiderUtils import pp_contact_name, merge_dicts
 
 
 class WebsiteContact(models.Model):
-    id = models.IntegerField(primary_key=True)
     website_id = models.IntegerField()
     name = models.CharField(max_length=255)
     first_name = models.CharField(max_length=255)
