@@ -2,10 +2,12 @@ import socket
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import json
+
+from soleadify_ml.models.website import Website
+from soleadify_ml.utils.CommonCrawlUtil import CommonCrawlUtil
 from soleadify_ml.utils.SocketUtils import recv_end, connect
 from soleadify_ml.utils.LocationUtils import get_location
 import logging
-from soleadify_ml.tasks import scrapping
 
 logger = logging.getLogger(__name__)
 
@@ -76,5 +78,8 @@ def location(request):
 
 @csrf_exempt
 def testing(request):
-    scrapping.delay(1231)
-    return HttpResponse(json.dumps([]), content_type='application/json')
+    website_id = request.GET.get('website_id', 0)
+    website = Website.objects.get(pk=website_id)
+    common_craw = CommonCrawlUtil(website)
+    diffs = common_craw.parse()
+    return HttpResponse(json.dumps(diffs), content_type='application/json')

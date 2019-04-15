@@ -10,11 +10,13 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         websites = Website.objects.raw(
-            "select distinct w.id, w.domain from websites w "
+            "select w.id, w.domain from websites w "
             "JOIN website_locations wl on w.id = wl.website_id "
             "JOIN category_websites cw on w.id = cw.website_id "
-            "where country_code = 'us' and region_code in ('ca','tx','fl','ny','il') "
-            "and category_id IN (10368) and (w.id >= 7910273)"
+            "left join website_metas wm on w.id = wm.website_id "
+            "left join website_contacts wc on w.id = wc.website_id "
+            "where country_code = 'us' and  category_id IN (10368) and wc.id is null and wm.id is null "
+            "group by w.id"
         )
         progress_bar = tqdm(desc="Processing", total=len(websites))
         for website in websites:
