@@ -2,6 +2,7 @@ from django.db import models
 
 
 class WebsitePage(models.Model):
+    id = models.AutoField(primary_key=True)
     id = models.IntegerField(primary_key=True)
     page = models.CharField(max_length=255)
     website_id = models.IntegerField()

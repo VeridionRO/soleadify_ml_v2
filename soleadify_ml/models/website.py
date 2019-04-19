@@ -68,3 +68,10 @@ class Website(models.Model):
 
     def get_link(self):
         return self.redirect_link if self.redirect_link else self.link
+
+    def get_id_list(self):
+        id_list = list(str(self.id))
+        return ((8 - len(id_list)) * ['0']) + id_list
+
+    def get_id_path(self):
+        return '/'.join(self.get_id_list()[:5])

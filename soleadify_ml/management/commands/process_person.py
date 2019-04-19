@@ -18,10 +18,10 @@ class Command(BaseCommand):
         self.spacy_model = spacy.load(settings.SPACY_CUSTOMN_MODEL_FOLDER)
 
         contacts = DirectoryContact.objects.raw(
-            "select id, name, count(1) from directory_contact "
-            "where (first_name is null or last_name is null) and name not in ('', 'null') and name is not null "
-            "group by name "
-            "order by count(1) desc"
+            "select id, name, count(1) from directory_contact  "
+            "where (first_name is null or last_name is null) and name not in ('', 'null') and name is not null  "
+            "group by name  "
+            "order by count(1) desc;"
         )
         progress_bar = tqdm(desc="Processing", total=len(contacts))
 
@@ -52,8 +52,8 @@ class Command(BaseCommand):
                             middle_name = partial_name
                     break
 
-                if ent.label_ == 'TITLE' and not title:
-                    title = ent.text
+                # if ent.label_ == 'TITLE' and not title:
+                #     title = ent.text
 
             if not first_name:
                 split_name_parts = pp.parse(raw_name, 'person')

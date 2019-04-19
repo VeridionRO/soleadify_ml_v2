@@ -1,10 +1,15 @@
 import socket
-from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse
-import json
 
-from soleadify_ml.models.website import Website
-from soleadify_ml.utils.CommonCrawlUtil import CommonCrawlUtil
+from dicttoxml import dicttoxml
+from django.db.models import Count
+from django.views.decorators.csrf import csrf_exempt
+from django.http import HttpResponse, JsonResponse
+import json
+import os.path
+
+from soleadify_ml.models.answer import Answer
+from soleadify_ml.models.question import Question
+from soleadify_ml.models.website_version import WebsiteVersion
 from soleadify_ml.utils.SocketUtils import recv_end, connect
 from soleadify_ml.utils.LocationUtils import get_location
 import logging
@@ -78,8 +83,36 @@ def location(request):
 
 @csrf_exempt
 def testing(request):
-    website_id = request.GET.get('website_id', 0)
-    website = Website.objects.get(pk=website_id)
-    common_craw = CommonCrawlUtil(website)
-    diffs = common_craw.parse()
-    return HttpResponse(json.dumps(diffs), content_type='application/json')
+    from soleadify_ml.models.book import Book
+    book_names = []
+    books = Book.objects.values_list('author_name', 'book_name'). \
+        exclude(book_name__icontains='The'). \
+        filter(author_name__startswith='m'). \
+        distinct()
+    for book in books:
+        book_names.append(list(book))
+    print(book_names)
+
+
+# @csrf_exempt
+# def test(request):
+#     phrase = 'this is a test'
+#     phrase_parts = phrase.split()
+#     return HttpResponse(json.dumps(phrase_parts), content_type='application/json')
+
+
+# def test(request):
+#     xml = '''<?xml version=\"1.0\" encoding=\"UTF-8\"?><user></user>'''
+#     if os.path.isfile('test.xml'):
+#         with open('test.xml', 'r') as in_file:
+#             xml = json.load(in_file)
+#
+#     return HttpResponse(xml, content_type='text/xml')
+
+
+def test(request):
+    questions = Question.objects.filter(answer='Null').all()
+    for question in questions:
+        print([question.id, question.question_text])
+
+    return HttpResponse(json.dumps([]), content_type='application/json')
