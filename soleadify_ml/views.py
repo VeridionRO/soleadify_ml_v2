@@ -1,15 +1,8 @@
 import socket
-
-from dicttoxml import dicttoxml
-from django.db.models import Count
 from django.views.decorators.csrf import csrf_exempt
-from django.http import HttpResponse, JsonResponse
+from django.http import HttpResponse
 import json
-import os.path
 
-from soleadify_ml.models.answer import Answer
-from soleadify_ml.models.question import Question
-from soleadify_ml.models.website_version import WebsiteVersion
 from soleadify_ml.utils.SocketUtils import recv_end, connect
 from soleadify_ml.utils.LocationUtils import get_location
 import logging
@@ -93,7 +86,6 @@ def testing(request):
         book_names.append(list(book))
     print(book_names)
 
-
 # @csrf_exempt
 # def test(request):
 #     phrase = 'this is a test'
@@ -108,11 +100,3 @@ def testing(request):
 #             xml = json.load(in_file)
 #
 #     return HttpResponse(xml, content_type='text/xml')
-
-
-def test(request):
-    questions = Question.objects.filter(answer='Null').all()
-    for question in questions:
-        print([question.id, question.question_text])
-
-    return HttpResponse(json.dumps([]), content_type='application/json')
