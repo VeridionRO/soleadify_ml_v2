@@ -85,7 +85,7 @@ ITEM_PIPELINES = {
     'crawler.pipelines.tag_link_pipeline.TagLinkPipeline': 300,
     'crawler.pipelines.splash_website_pipeline.SplashWebsitePipeline': 300,
 }
-LOG_LEVEL = 'INFO'
+LOG_LEVEL = 'ERROR'
 DUPEFILTER_CLASS = 'scrapy_splash.SplashAwareDupeFilter'
 HTTPCACHE_STORAGE = 'scrapy_splash.SplashAwareFSCacheStorage'
 
