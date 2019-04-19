@@ -1,7 +1,5 @@
 from tqdm import tqdm
 from django.core.management.base import BaseCommand
-
-from soleadify_ml.models.website import Website
 from soleadify_ml.tasks import splash_website_spider
 
 
