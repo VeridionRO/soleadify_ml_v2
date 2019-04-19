@@ -22,20 +22,29 @@ class SplashWebsiteSpider(scrapy.Spider):
 
     def __init__(self, website_id, **kw):
         self.website = Website.objects.get(pk=website_id)
+
         super(SplashWebsiteSpider, self).__init__(**kw)
 
     def start_requests(self):
-        yield SplashRequest(
-            self.website.get_link(), self.parse,
-            endpoint='execute',
-            cache_args=['lua_source'],
-            args={
-                'wait': 0.5,
-                'html': 1,
-                'lua_source': script,
-                'png': 1
-            },
-        )
+        if self.website and self.website.contact_state == 'pending':
+            self.website.contact_state = 'working'
+            self.website.save(update_fields=['contact_state'])
+
+            yield SplashRequest(
+                self.website.get_link(), self.parse,
+                endpoint='execute',
+                cache_args=['lua_source'],
+                args={
+                    'wait': 0.5,
+                    'html': 1,
+                    'lua_source': script,
+                    'png': 1
+                },
+            )
 
     def parse(self, response):
         yield {'response': response, 'website': self.website}
+
+    def close(self, spider):
+        self.website.contact_state = 'finished'
+        self.website.save(update_fields=['contact_state'])
