@@ -19,6 +19,8 @@ class SplashWebsiteSpider(scrapy.Spider):
     name = 'SplashWebsiteSpider'
     pipeline = [SplashWebsitePipeline]
     website = None
+    http_user = 'user'
+    http_pass = 'userpass'
 
     def __init__(self, website_id, **kw):
         self.website = Website.objects.get(pk=website_id)
