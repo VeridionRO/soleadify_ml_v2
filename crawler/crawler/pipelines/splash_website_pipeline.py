@@ -27,7 +27,7 @@ class SplashWebsitePipeline(object):
         if title:
             meta_values.append(WebsiteMeta(website_id=self.website.id, meta_key='title', meta_value=title))
         if description:
-            WebsiteMeta(website_id=self.website.id, meta_key='description', meta_value=description)
+            meta_values.append(WebsiteMeta(website_id=self.website.id, meta_key='description', meta_value=description))
         WebsiteMeta.objects.bulk_create(meta_values, ignore_conflicts=True)
 
         s3 = boto3.resource('s3')
