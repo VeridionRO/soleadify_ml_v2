@@ -1,3 +1,4 @@
+import boto3
 from django_mysql.models import EnumField
 from django.db import models
 from soleadify_ml.models.website_page import WebsitePage
@@ -75,3 +76,12 @@ class Website(models.Model):
 
     def get_id_path(self):
         return '/'.join(self.get_id_list()[:5])
+
+    def has_s3_file(self):
+        s3 = boto3.resource('s3')
+        s3_path = '%s/%s.jpg' % (self.get_id_path(), str(self.id))
+        try:
+            s3.Object('websites-ss', s3_path).load()
+            return True
+        except:
+            return False

@@ -41,7 +41,7 @@ class Command(BaseCommand):
             "JOIN website_contacts wc on w.id = wc.website_id "
             "where country_code = 'us' and category_id IN (10368) and ((64 & wc.score) or (32 & wc.score)) "
             "group by w.id "
-            "having count(distinct  wc.id) < 15 "
+            "having count(distinct  wc.id) < 20 "
             "order by count(distinct  wc.id) desc"
         )
         progress_bar = tqdm(desc="Processing", total=len(websites))
@@ -75,7 +75,7 @@ class Command(BaseCommand):
             if len(query):
                 organization_keys = DirectoryContact.objects.values_list('organization_key'). \
                                         annotate(dcount=Count('name', distinct=True)). \
-                                        filter(query).order_by('-dcount')[:3]
+                                        filter(query).exclude(organization_key__isnull=True).order_by('-dcount')[:3]
                 delete_costs = np.zeros(128, dtype=np.float64)
 
                 print("website_id: %s, domain: %s, website_contacts: %s" %
@@ -103,7 +103,7 @@ class Command(BaseCommand):
                                                            website_id=website.id)
                         print("organization_key: %s, matching_contacts: %s, lev: %s, type: %s" %
                               (organization_key[0], organization_key[1], lev_cost, 1))
-                    elif (organization_key[1] / len(website_contacts)) > 0.2 and lev_cost <= 2:
+                    elif (organization_key[1] / len(website_contacts)) > 0.3 and lev_cost <= 2:
                         website_director = WebsiteDirector(organization_key=organization_key[0],
                                                            website_id=website.id)
                         print("organization_key: %s, matching_contacts: %s, lev: %s, type: %s" %
