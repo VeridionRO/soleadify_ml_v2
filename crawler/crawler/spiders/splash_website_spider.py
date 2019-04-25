@@ -27,7 +27,7 @@ class SplashWebsiteSpider(scrapy.Spider):
         super(SplashWebsiteSpider, self).__init__(**kw)
 
     def start_requests(self):
-        if self.website and self.website.contact_state == 'pending' and self.website.has_s3_file():
+        if self.website and self.website.contact_state == 'pending' and not self.website.has_s3_file():
             self.website.contact_state = 'working'
             self.website.save(update_fields=['contact_state'])
 
