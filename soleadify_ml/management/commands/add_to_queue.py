@@ -8,9 +8,16 @@ from soleadify_ml.tasks import splash_website_spider
 class Command(BaseCommand):
     help = "Add to queue"
 
+    def add_arguments(self, parser):
+        parser.add_argument('step', type=int)
+
     def handle(self, *args, **options):
+        step = options['step']
+        limit = 1000000
+        offset = step * 1000000
+        print(step)
         websites = Website.objects.raw(
-            "select w.id from websites w limit 1000000"
+            "select w.id from websites w limit %s offset %s" % (limit, offset)
         )
         progress_bar = tqdm(desc="Processing", total=len(websites))
         for website in websites:
