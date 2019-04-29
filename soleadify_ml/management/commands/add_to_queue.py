@@ -21,8 +21,6 @@ class Command(BaseCommand):
         )
         progress_bar = tqdm(desc="Processing", total=len(websites))
         for website in websites:
-            if website.has_s3_file():
-                continue
             splash_website_spider.delay(website.id)
             progress_bar.update(1)
         progress_bar.close()
