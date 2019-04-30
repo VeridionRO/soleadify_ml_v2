@@ -17,13 +17,7 @@ class WebsiteVersion(models.Model):
     website_id = models.IntegerField()
     version_date = models.DateField()
     modifications = models.IntegerField()
-
-    index = ['CC-MAIN-2017-04', 'CC-MAIN-2017-09', 'CC-MAIN-2017-13', 'CC-MAIN-2017-17', 'CC-MAIN-2017-22',
-             'CC-MAIN-2017-26', 'CC-MAIN-2017-30', 'CC-MAIN-2017-34', 'CC-MAIN-2017-39', 'CC-MAIN-2017-43',
-             'CC-MAIN-2017-47', 'CC-MAIN-2017-51', 'CC-MAIN-2018-05', 'CC-MAIN-2018-09', 'CC-MAIN-2018-13',
-             'CC-MAIN-2018-17', 'CC-MAIN-2018-22', 'CC-MAIN-2018-26', 'CC-MAIN-2018-30', 'CC-MAIN-2018-34',
-             'CC-MAIN-2018-39', 'CC-MAIN-2018-43', 'CC-MAIN-2018-47', 'CC-MAIN-2018-51', 'CC-MAIN-2019-04',
-             'CC-MAIN-2019-09', 'CC-MAIN-2019-13']
+    index = []
 
     class Meta:
         db_table = 'website_versions'
@@ -36,6 +30,9 @@ class WebsiteVersion(models.Model):
 
         if not website:
             return None
+
+        if len(WebsiteVersion.index) == 0:
+            WebsiteVersion.get_indexes()
 
         for index in WebsiteVersion.index:
             url = '%s%s-index?url=%s*&output=json' % (settings.COMMON_CRAWL_SERVER, index, website.domain)
@@ -53,6 +50,11 @@ class WebsiteVersion(models.Model):
 
                     if int(page['length']) < 1000:
                         continue
+
+                    if page['urlkey'] == 'com,jfdental)/':
+                        html = WebsiteVersion.download_page(page)
+                        with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/' + index,'a') as the_file:
+                            the_file.write(html)
 
                     website_version[page['urlkey']] = {
                         'filename': page['filename'],
@@ -137,3 +139,19 @@ class WebsiteVersion(models.Model):
                 pass
 
         return response
+
+    @staticmethod
+    def get_indexes():
+        index_url = '%s%s' % (settings.COMMON_CRAWL_SERVER, 'collinfo.json')
+        indexes = []
+        try:
+            response = urllib.request.urlopen(index_url)
+            text = response.read().decode('utf-8')
+            indexes = json.loads(text)
+        except urllib.request.HTTPError:
+            pass
+
+        for index in indexes:
+            if len(WebsiteVersion.index) > 24:
+                break
+            WebsiteVersion.index.append(index['id'])
