@@ -15,15 +15,8 @@ app.config_from_object('django.conf:settings')
 
 # Load task modules from all registered Django app configs.
 app.autodiscover_tasks()
+app.conf.task_routes = {'soleadify_ml.tasks.*': {'queue': 'version'}}
 app.conf.task_default_queue = 'celery'
-
-app.conf.beat_schedule = {
-    'add-every-30-seconds': {
-        'task': 'tasks.extract_from_website.py.extract_contacts',
-        'schedule': 5.0,
-        'args': (16, 16)
-    },
-}
 
 
 @app.task(bind=True)
