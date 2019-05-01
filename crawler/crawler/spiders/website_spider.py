@@ -3,6 +3,7 @@ import socket
 import tldextract
 
 from crawler.spiders.spider_common import SpiderCommon
+from soleadify_ml.models.website_job import WebsiteJob
 from soleadify_ml.models.website_meta import WebsiteMeta
 from soleadify_ml.utils.SocketUtils import connect
 import scrapy
@@ -29,31 +30,37 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
     url = None
     cached_links = {}
     ignored_links = ['tel:', 'mailto:']
+    contact_job = None
 
     def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
+        self.contact_job = self.website.contact_job()
         super(WebsiteSpider, self).__init__(**kw)
 
         self.soc_spacy = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         self.soc_spacy.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
         connect(self.soc_spacy, '', settings.SPACY_PORT)
 
-        if self.website and (self.website.contact_state == 'pending' or force):
-            self.url = self.website.get_link()
-            self.link_extractor = LinkExtractor()
-
-            self.website.contact_state = 'working'
-            self.website.save(update_fields=['contact_state'])
-            self.country_codes = self.website.get_country_codes()
-        elif self.website and self.website.contact_state != 'pending':
+        if (self.contact_job and self.contact_job.status != 'pending') or force:
             logger.debug('already processed: ' + self.website.link)
-        else:
-            logger.debug("couldn't find website: ")
+            return
+        elif not self.contact_job:
+            self.contact_job = WebsiteJob(
+                website_id=self.website.id,
+                job_type=Website.CONTACT_JOB_TYPE,
+                status='working'
+            )
+            self.contact_job.save()
+
+        self.url = self.website.get_link()
+        self.link_extractor = LinkExtractor()
+        self.country_codes = self.website.get_country_codes()
 
     def start_requests(self):
         if self.url:
             logger.debug('start website: ' + self.url)
-            return [Request(self.url, callback=self.parse, dont_filter=True)]
+            return []
+            # return [Request(self.url, callback=self.parse, dont_filter=True)]
         else:
             return []
 
@@ -134,8 +141,8 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
             WebsiteMeta.objects.bulk_create(db_metas, ignore_conflicts=True)
 
         if self.url:
-            self.website.contact_state = 'finished'
-            self.website.save(update_fields=['contact_state'])
+            self.contact_job.status = 'finished'
+            self.contact_job.save()
 
             logger.debug('end website: ' + self.website.link)
 

@@ -1,6 +1,6 @@
 import boto3
-from django_mysql.models import EnumField
 from django.db import models
+
 from soleadify_ml.models.website_page import WebsitePage
 from soleadify_ml.models.website_contact import WebsiteContact
 from soleadify_ml.models.website_location import WebsiteLocation
@@ -17,8 +17,17 @@ class Website(models.Model):
     site_value = models.IntegerField()
     created_at = models.DateTimeField()
     updated_at = models.DateTimeField()
-    contact_state = EnumField(choices=['pending', 'working', 'finished'])
     country_codes = []
+
+    CRAWL_JOB_TYPE = 1
+    WAPPALYZE_JOB_TYPE = 2
+    LIGHTHOUSE_JOB_TYPE = 3
+    CONTACT_JOB_TYPE = 4
+    SPLASH_JOB_TYPE = 5
+    LOCATION_JOB_TYPE = 6
+    CATEGORISE_JOB_TYPE = 7
+    ML_JOB_TYPE = 8
+    VERSION_JOB_TYPE = 9
 
     class Meta:
         db_table = 'websites'
@@ -85,3 +94,12 @@ class Website(models.Model):
             return True
         except:
             return False
+
+    def contact_job(self):
+        return self.websitejob_set.filter(job_type=self.CONTACT_JOB_TYPE).first()
+
+    def splash_job(self):
+        return self.websitejob_set.filter(job_type=self.SPLASH_JOB_TYPE).first()
+
+    def version_job(self):
+        return self.websitejob_set.filter(job_type=self.VERSION_JOB_TYPE).first()

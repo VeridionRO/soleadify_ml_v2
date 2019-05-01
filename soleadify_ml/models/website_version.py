@@ -10,6 +10,7 @@ from soleadify_ml import settings
 from json import JSONDecodeError
 
 from soleadify_ml.models.website import Website
+from soleadify_ml.models.website_job import WebsiteJob
 
 
 class WebsiteVersion(models.Model):
@@ -31,6 +32,16 @@ class WebsiteVersion(models.Model):
         if not website:
             return None
 
+        version_job = website.version_job()
+        if version_job and version_job.status != 'pending':
+            return []
+        else:
+            version_job = WebsiteJob(
+                website_id=website.id,
+                job_type=Website.VERSION_JOB_TYPE,
+                status='running'
+            )
+
         if len(WebsiteVersion.index) == 0:
             WebsiteVersion.get_indexes()
 
@@ -50,11 +61,6 @@ class WebsiteVersion(models.Model):
 
                     if int(page['length']) < 1000:
                         continue
-
-                    if page['urlkey'] == 'com,jfdental)/':
-                        html = WebsiteVersion.download_page(page)
-                        with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/' + index,'a') as the_file:
-                            the_file.write(html)
 
                     website_version[page['urlkey']] = {
                         'filename': page['filename'],
@@ -78,6 +84,8 @@ class WebsiteVersion(models.Model):
                     existing_pages[page_key] = int(page_version['length'])
 
         WebsiteVersion.objects.bulk_create(versions, ignore_conflicts=True)
+        version_job.status = 'finished'
+        version_job.save()
 
         return versions
 
@@ -137,6 +145,12 @@ class WebsiteVersion(models.Model):
                 warc, header, response = data.strip().split('\r\n\r\n', 2)
             except:
                 pass
+
+        # if record['urlkey'] == 'com,jfdental)/':
+        #     html = WebsiteVersion.download_page(record)
+        #     with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/' + record['filename'],
+        #               'a') as the_file:
+        #         the_file.write(html)
 
         return response
 
