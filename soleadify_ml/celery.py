@@ -14,9 +14,9 @@ app = Celery('soleadify_ml')
 app.config_from_object('django.conf:settings')
 
 # Load task modules from all registered Django app configs.
-app.autodiscover_tasks()
 app.conf.task_routes = {'soleadify_ml.tasks.*': {'queue': 'version'}}
 app.conf.task_default_queue = 'celery'
+app.autodiscover_tasks()
 
 
 @app.task(bind=True)
