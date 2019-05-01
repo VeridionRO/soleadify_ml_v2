@@ -1,6 +1,7 @@
 from __future__ import absolute_import, unicode_literals
 import os
 from celery import Celery
+from django.conf import settings
 
 # set the default Django settings module for the 'celery' program.
 os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'soleadify_ml.settings')
@@ -16,7 +17,7 @@ app.config_from_object('django.conf:settings')
 # Load task modules from all registered Django app configs.
 app.conf.task_routes = {'soleadify_ml.tasks.*': {'queue': 'version'}}
 app.conf.task_default_queue = 'celery'
-app.autodiscover_tasks()
+app.autodiscover_tasks(settings.INSTALLED_APPS)
 
 
 @app.task(bind=True)
