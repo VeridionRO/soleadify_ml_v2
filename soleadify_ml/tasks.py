@@ -7,8 +7,6 @@ from soleadify_ml.celery import app
 from billiard.context import Process
 from scrapy.utils.project import get_project_settings
 
-from soleadify_ml.models.website_version import WebsiteVersion
-
 
 class WebsiteSpiderStarter(Process):
     def __init__(self, website_id):
@@ -58,4 +56,5 @@ def splash_website_spider(website_id):
 
 @app.task
 def get_version(website_id):
+    from soleadify_ml.models.website_version import WebsiteVersion
     return WebsiteVersion.parse(website_id)
