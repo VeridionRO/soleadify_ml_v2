@@ -3,7 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import json
 
-from soleadify_ml.models.website_job import WebsiteJob
+from soleadify_ml.models.website_version import WebsiteVersion
 from soleadify_ml.utils.SocketUtils import recv_end, connect
 from soleadify_ml.utils.LocationUtils import get_location
 import logging
@@ -77,12 +77,8 @@ def location(request):
 
 @csrf_exempt
 def testing(request):
-    version = WebsiteJob.objects.get(pk=1)
-    website = version.website
-    # website_id = request.GET.get('website_id', 0)
-    # website = Website.objects.get(pk=website_id)
-    # a = website.website_job_set.all()
-    print(website)
+    website_id = request.GET.get('website_id', 0)
+    WebsiteVersion.parse(website_id)
 
 # @csrf_exempt
 # def test(request):

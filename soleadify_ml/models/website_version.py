@@ -39,8 +39,9 @@ class WebsiteVersion(models.Model):
             version_job = WebsiteJob(
                 website_id=website.id,
                 job_type=Website.VERSION_JOB_TYPE,
-                status='running'
+                status='working'
             )
+            version_job.save()
 
         if len(WebsiteVersion.index) == 0:
             WebsiteVersion.get_indexes()

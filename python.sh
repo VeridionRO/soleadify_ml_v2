@@ -27,3 +27,4 @@ python -m spacy download en_core_web_lg
 pip install scrapy-splash
 pip install boto3
 pip install cookiecutter
+pip install isoweek
