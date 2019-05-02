@@ -25,21 +25,28 @@ class WebsiteVersion(models.Model):
     version_date = models.DateField()
     modifications = models.IntegerField()
     index = []
+    index_dates = {
+        'CC-MAIN-2012': '2012-01-01',
+        'CC-MAIN-2009-2010': '2010-01-01',
+        'CC-MAIN-2008-2009': '2009-01-01',
+    }
 
     class Meta:
         db_table = 'website_versions'
 
     @staticmethod
-    def parse(website_id):
+    def parse(website_id, force=False):
         versions = []
+        indexes = []
         existing_pages = {}
         website = Website.objects.get(pk=website_id)
+        error_count = 0
 
         if not website:
             return None
 
         version_job = website.version_job()
-        if version_job and version_job.status != 'pending':
+        if version_job and version_job.status != 'pending' and not force:
             return []
         elif not version_job:
             version_job = WebsiteJob(
@@ -53,6 +60,10 @@ class WebsiteVersion(models.Model):
             WebsiteVersion.get_indexes()
 
         for index in WebsiteVersion.index:
+            if error_count >= 3:
+                break
+
+            index_list = []
             logger.debug("website: %s, index: %s" % (website.id, index))
             url = '%s%s-index?url=%s*&output=json' % (settings.COMMON_CRAWL_SERVER, index, website.domain)
             try:
@@ -60,15 +71,15 @@ class WebsiteVersion(models.Model):
                 text = response.read().decode('utf-8')
             except urllib.request.HTTPError as e:
                 logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
+                error_count += 1
                 continue
             except URLError as e:
                 os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
                           '/var/www/cc-index-server/info.log')
                 logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
                 continue
-            page_strings = text.split('\n')
-            website_version = {'index': index}
 
+            page_strings = text.split('\n')
             for page_string in page_strings:
                 try:
                     page = json.loads(page_string)
@@ -76,26 +87,25 @@ class WebsiteVersion(models.Model):
                     if int(page['length']) < 1000:
                         continue
 
-                    website_version[page['urlkey']] = {
+                    index_list.append({
                         'filename': page['filename'],
                         'length': page['length'],
-                        'status': page['status'],
                         'offset': page['offset'],
-                        'index': index,
-                    }
+                        'urlkey': page['urlkey'],
+                    })
                 except JSONDecodeError:
-                    pass
+                    continue
+            indexes.append((index, index_list))
 
+        indexes.reverse()
+        for index_key, index_list in indexes:
+            date = WebsiteVersion.get_date_from_index(index_key)
             try:
-                version = WebsiteVersion.check_versions(website_version, existing_pages, website)
+                version = WebsiteVersion.check_versions(index_list, existing_pages, website, date)
                 if version:
                     versions.append(version)
             except IndexError:
                 pass
-
-            for page_key, page_version in website_version.items():
-                if 'length' in page_version:
-                    existing_pages[page_key] = int(page_version['length'])
 
         WebsiteVersion.objects.bulk_create(versions, ignore_conflicts=True)
         version_job.status = 'finished'
@@ -104,36 +114,24 @@ class WebsiteVersion(models.Model):
         return versions
 
     @staticmethod
-    def check_versions(current_version, existing_pages, website):
-        index = current_version['index']
-        dirty_date = index.replace('CC-MAIN-', '')
-        dirty_date_parts = dirty_date.split('-')
-        year = int(dirty_date_parts[0])
-        week_no = int(dirty_date_parts[1])
-
-        week_date = Week(year, week_no).monday()
-        date = week_date.strftime('%Y-%m-%d')
-
+    def check_versions(current_version, existing_pages, website, date):
         count = 0
-        for page_key, page in current_version.items():
-            if type(page) is not dict:
-                continue
-
+        for page in current_version:
             length = int(page['length'])
+            url_key = page['urlkey']
 
-            if page_key in existing_pages:
-                length_v1 = existing_pages[page_key]
-                if abs(length_v1 - length) <= 500:
-                    continue
-                else:
+            if url_key in existing_pages:
+                length_v1 = existing_pages[url_key]
+                if abs(length_v1 - length) >= 500:
                     count += 1
-            elif page_key not in existing_pages:
+            elif url_key not in existing_pages:
                 count += 1
+            existing_pages[url_key] = length
 
         return WebsiteVersion(website_id=website.id, version_date=date, modifications=count) if count else None
 
     @staticmethod
-    def download_page(record):
+    def download_page(record, index):
         offset, length = int(record['offset']), int(record['length'])
         offset_end = offset + length - 1
 
@@ -160,32 +158,44 @@ class WebsiteVersion(models.Model):
             except:
                 pass
 
-        # if record['urlkey'] == 'com,jfdental)/':
-        #     html = WebsiteVersion.download_page(record)
-        #     with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/' + record['filename'],
-        #               'a') as the_file:
-        #         the_file.write(html)
+        if record['urlkey'] == '':
+            with open('/Users/mihaivinaga/Work/soleadify_ml_v2/soleadify_ml/files/' + index, 'a') as the_file:
+                the_file.write(response)
 
         return response
 
     @staticmethod
     def get_indexes():
         index_url = '%s%s' % (settings.COMMON_CRAWL_SERVER, 'collinfo.json')
-        indexes = []
+        previous_year = None
         try:
             response = urllib.request.urlopen(index_url)
             text = response.read().decode('utf-8')
             indexes = json.loads(text)
-        except urllib.request.HTTPError as e:
-            return indexes
-        except URLError as e:
+        except urllib.request.HTTPError:
+            return []
+        except URLError:
             os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
                       '/var/www/cc-index-server/info.log')
-            return indexes
+            return []
 
         for index in indexes:
-            if len(WebsiteVersion.index) > 24:
-                break
-            WebsiteVersion.index.append(index['id'])
+            year = WebsiteVersion.get_date_from_index(index['id'], '%Y')
+            if len(WebsiteVersion.index) < 24:
+                WebsiteVersion.index.append(index['id'])
+            elif previous_year != year:
+                WebsiteVersion.index.append(index['id'])
+            previous_year = year
 
-        WebsiteVersion.index.reverse()
+    @staticmethod
+    def get_date_from_index(index, date_format='%Y-%m-%d'):
+        if index in WebsiteVersion.index_dates:
+            date = WebsiteVersion.index_dates[index]
+        else:
+            dirty_date = index.replace('CC-MAIN-', '')
+            dirty_date_parts = dirty_date.split('-')
+            year = int(dirty_date_parts[0])
+            week_no = int(dirty_date_parts[1])
+            week_date = Week(year, week_no).monday()
+            date = week_date.strftime(date_format)
+        return date

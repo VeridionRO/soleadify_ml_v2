@@ -78,7 +78,7 @@ def location(request):
 @csrf_exempt
 def testing(request):
     website_id = request.GET.get('website_id', 0)
-    WebsiteVersion.parse(website_id)
+    WebsiteVersion.parse(website_id, True)
 
 # @csrf_exempt
 # def test(request):
