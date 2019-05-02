@@ -2,6 +2,7 @@ import json
 import requests
 import gzip
 import urllib.request
+import logging
 
 from io import BytesIO
 from isoweek import Week
@@ -11,6 +12,8 @@ from json import JSONDecodeError
 
 from soleadify_ml.models.website import Website
 from soleadify_ml.models.website_job import WebsiteJob
+
+logger = logging.getLogger(__name__)
 
 
 class WebsiteVersion(models.Model):
@@ -47,6 +50,7 @@ class WebsiteVersion(models.Model):
             WebsiteVersion.get_indexes()
 
         for index in WebsiteVersion.index:
+            logger.debug("website: %s, index: %s") % (website_id, index)
             url = '%s%s-index?url=%s*&output=json' % (settings.COMMON_CRAWL_SERVER, index, website.domain)
             try:
                 response = urllib.request.urlopen(url)
