@@ -50,7 +50,7 @@ class WebsiteVersion(models.Model):
             WebsiteVersion.get_indexes()
 
         for index in WebsiteVersion.index:
-            logger.debug("website: %s, index: %s") % (website_id, index)
+            logger.debug("website: %s, index: %s") % (website.id, index)
             url = '%s%s-index?url=%s*&output=json' % (settings.COMMON_CRAWL_SERVER, index, website.domain)
             try:
                 response = urllib.request.urlopen(url)
