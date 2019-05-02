@@ -1,4 +1,5 @@
 import json
+import os
 import requests
 import gzip
 import urllib.request
@@ -56,6 +57,11 @@ class WebsiteVersion(models.Model):
                 response = urllib.request.urlopen(url)
                 text = response.read().decode('utf-8')
             except urllib.request.HTTPError as e:
+                logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
+                continue
+            except urllib.error.URLError as e:
+                os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
+                          '/var/www/cc-index-server/info.log')
                 logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
                 continue
             page_strings = text.split('\n')

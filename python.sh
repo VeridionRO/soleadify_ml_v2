@@ -1,7 +1,6 @@
 curl -O https://repo.anaconda.com/archive/Anaconda3-2019.03-Linux-x86_64.sh
 sha256sum Anaconda3-2019.03-Linux-x86_64.sh
 bash Anaconda3-2019.03-Linux-x86_64.sh
-conda install python=3.7 anaconda=custom
 apt-get update
 apt-get install libmysqlclient-dev
 apt-get install python3.7-dev
