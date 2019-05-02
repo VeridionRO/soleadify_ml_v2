@@ -15,11 +15,11 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         step = options['step']
-        limit = 1000000
-        offset = step * 1000000
+        limit = 2000000
+        offset = step * 2000000
         websites = Website.objects.raw(
-            # "select w.id from websites w limit %s offset %s" % (limit, offset)
-            "select w.id from websites w"
+            "select w.id from websites w limit %s offset %s" % (limit, offset)
+            # "select w.id from websites w"
         )
         # progress_bar = tqdm(desc="Processing", total=len(websites))
         for website in websites:
