@@ -38,7 +38,7 @@ class WebsiteVersion(models.Model):
         version_job = website.version_job()
         if version_job and version_job.status != 'pending':
             return []
-        else:
+        elif not version_job:
             version_job = WebsiteJob(
                 website_id=website.id,
                 job_type=Website.VERSION_JOB_TYPE,
@@ -55,7 +55,8 @@ class WebsiteVersion(models.Model):
             try:
                 response = urllib.request.urlopen(url)
                 text = response.read().decode('utf-8')
-            except urllib.request.HTTPError:
+            except urllib.request.HTTPError as e:
+                logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
                 continue
             page_strings = text.split('\n')
             website_version = {'index': index}
@@ -114,9 +115,9 @@ class WebsiteVersion(models.Model):
 
             if page_key in existing_pages:
                 length_v1 = existing_pages[page_key]
-                if length == length_v1:
+                if abs(length_v1 - length) <= 500:
                     continue
-                elif abs(length_v1 - length) > 500:
+                else:
                     count += 1
             elif page_key not in existing_pages:
                 count += 1
@@ -174,3 +175,5 @@ class WebsiteVersion(models.Model):
             if len(WebsiteVersion.index) > 24:
                 break
             WebsiteVersion.index.append(index['id'])
+
+        WebsiteVersion.index.reverse()
