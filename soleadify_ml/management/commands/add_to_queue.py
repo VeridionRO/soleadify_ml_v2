@@ -19,8 +19,8 @@ class Command(BaseCommand):
             # "select w.id from websites w limit %s offset %s" % (limit, offset)
             "select w.id from websites w"
         )
-        progress_bar = tqdm(desc="Processing", total=len(websites))
+        # progress_bar = tqdm(desc="Processing", total=len(websites))
         for website in websites:
             get_version.delay(website.id)
-            progress_bar.update(1)
-        progress_bar.close()
+            # progress_bar.update(1)
+        # progress_bar.close()
