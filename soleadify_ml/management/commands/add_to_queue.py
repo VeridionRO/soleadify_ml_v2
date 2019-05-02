@@ -2,7 +2,7 @@ import logging
 
 from django.core.management.base import BaseCommand
 from soleadify_ml.models.website import Website
-from soleadify_ml.tasks import splash_website_spider
+from soleadify_ml.tasks import get_version
 
 logger = logging.getLogger(__name__)
 
@@ -23,7 +23,7 @@ class Command(BaseCommand):
         )
         # progress_bar = tqdm(desc="Processing", total=len(websites))
         for website in websites:
-            splash_website_spider.delay(website.id)
+            get_version.delay(website.id)
             logger.info(website.id)
             # progress_bar.update(1)
         # progress_bar.close()
