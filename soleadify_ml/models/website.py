@@ -79,6 +79,9 @@ class Website(models.Model):
     def get_link(self):
         return self.redirect_link if self.redirect_link else self.link
 
+    def get_domain(self):
+        return self.redirect_domain if self.redirect_domain else self.domain
+
     def get_id_list(self):
         id_list = list(str(self.id))
         return ((8 - len(id_list)) * ['0']) + id_list

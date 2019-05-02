@@ -65,7 +65,7 @@ class WebsiteVersion(models.Model):
 
             index_list = []
             logger.debug("website: %s, index: %s" % (website.id, index))
-            url = '%s%s-index?url=%s*&output=json' % (settings.COMMON_CRAWL_SERVER, index, website.domain)
+            url = '%s%s-index?url=%s*&output=json' % (settings.COMMON_CRAWL_SERVER, index, website.get_domain())
             try:
                 response = urllib.request.urlopen(url)
                 text = response.read().decode('utf-8')
