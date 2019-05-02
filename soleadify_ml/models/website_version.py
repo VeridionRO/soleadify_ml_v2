@@ -176,8 +176,12 @@ class WebsiteVersion(models.Model):
             response = urllib.request.urlopen(index_url)
             text = response.read().decode('utf-8')
             indexes = json.loads(text)
-        except urllib.request.HTTPError:
-            pass
+        except urllib.request.HTTPError as e:
+            return indexes
+        except URLError as e:
+            os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
+                      '/var/www/cc-index-server/info.log')
+            return indexes
 
         for index in indexes:
             if len(WebsiteVersion.index) > 24:
