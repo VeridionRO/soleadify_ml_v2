@@ -36,19 +36,22 @@ class SplashWebsiteSpider(scrapy.Spider):
         super(SplashWebsiteSpider, self).__init__(**kw)
 
     def start_requests(self):
-        if not self.force:
-            if self.splash_job and self.splash_job.status != 'pending':
-                return
-            elif not self.splash_job:
-                self.splash_job = WebsiteJob(
-                    website_id=self.website.id,
-                    job_type=Website.SPLASH_JOB_TYPE,
-                    status='working'
-                )
-                self.splash_job.save()
 
-            if self.website.has_s3_file():
-                return
+        if self.splash_job and self.splash_job.status != 'pending' and not self.force:
+            return
+        elif not self.splash_job:
+            self.splash_job = WebsiteJob(
+                website_id=self.website.id,
+                job_type=Website.SPLASH_JOB_TYPE,
+                status='working'
+            )
+            self.splash_job.save()
+        else:
+            self.splash_job.status = 'working'
+            self.splash_job.save()
+
+        if self.website.has_s3_file() and not self.force:
+            return
 
         yield SplashRequest(
             self.website.get_link(), self.parse,
