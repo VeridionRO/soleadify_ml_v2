@@ -7,7 +7,7 @@ from soleadify_ml.models.website_job import WebsiteJob
 script = """
 function main(splash, args)
   assert(splash:go(args.url))
-  assert(splash:wait(0.5))
+  assert(splash:wait(2))
   return {
     html = splash:html(),
     png = splash:png()
@@ -23,25 +23,28 @@ class SplashWebsiteSpider(scrapy.Spider):
     splash_job = None
     http_user = 'user'
     http_pass = 'userpass'
+    force = False
 
-    def __init__(self, website_id, **kw):
+    def __init__(self, website_id, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
         self.splash_job = self.website.splash_job()
+        self.force = force
         super(SplashWebsiteSpider, self).__init__(**kw)
 
     def start_requests(self):
-        if self.splash_job and self.splash_job.status == 'pending':
-            return
-        elif not self.splash_job:
-            self.splash_job = WebsiteJob(
-                website_id=self.website.id,
-                job_type=Website.SPLASH_JOB_TYPE,
-                status='working'
-            )
-            self.splash_job.save()
+        if not self.force:
+            if self.splash_job and self.splash_job.status != 'pending':
+                return
+            elif not self.splash_job:
+                self.splash_job = WebsiteJob(
+                    website_id=self.website.id,
+                    job_type=Website.SPLASH_JOB_TYPE,
+                    status='working'
+                )
+                self.splash_job.save()
 
-        if self.website.has_s3_file():
-            return
+            if self.website.has_s3_file():
+                return
 
         yield SplashRequest(
             self.website.get_link(), self.parse,

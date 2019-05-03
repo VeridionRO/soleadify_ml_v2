@@ -18,7 +18,7 @@ class SpiderCommon:
     texts = {}
     contacts = {}
     temp_contacts = {}
-    max_pages = 500
+    max_pages = 200
     cached_docs = {}
     soc_spacy = None
     country_codes = []
@@ -32,6 +32,7 @@ class SpiderCommon:
         'ORG': Counter(),
         'LAW_CAT': Counter(),
     }
+    has_contacts = False
 
     def contact_done(self, name, url):
         name_parts = WebsiteContact.get_name_key(name)
@@ -67,6 +68,8 @@ class SpiderCommon:
         for ent in docs:
             label = ent['label']
             text = ent['text']
+            if label in ['EMAIL', 'PHONE']:
+                self.has_contacts = True
             if label in ['EMAIL', 'PHONE', 'ORG', 'LAW_CAT']:
                 if label not in website_metas_temp:
                     website_metas_temp[label] = {}

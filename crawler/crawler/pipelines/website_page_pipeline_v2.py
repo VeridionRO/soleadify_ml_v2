@@ -38,6 +38,9 @@ class WebsitePagePipelineV2(object):
             logger.debug("%s - get names", response.url)
             person_names = spider.get_person_names(docs)
 
+            if spider.has_contacts:
+                return []
+
             for person_name in person_names:
                 if spider.contact_done(person_name, response.url):
                     continue

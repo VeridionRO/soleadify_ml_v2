@@ -23,7 +23,7 @@ class Command(BaseCommand):
         )
         # progress_bar = tqdm(desc="Processing", total=len(websites))
         for website in websites:
-            splash_website_spider.delay(website.id)
+            splash_website_spider.delay(website.id, True)
             logger.info(website.id)
             # progress_bar.update(1)
         # progress_bar.close()

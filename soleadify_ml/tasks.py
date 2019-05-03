@@ -21,14 +21,15 @@ class WebsiteSpiderStarter(Process):
 
 
 class SplashWebsiteSpiderStarter(Process):
-    def __init__(self, website_id):
+    def __init__(self, website_id, force=False):
         Process.__init__(self)
         settings = get_project_settings()
         self.crawler = CrawlerProcess(settings)
         self.website_id = website_id
+        self.force = force
 
     def run(self):
-        self.crawler.crawl(SplashWebsiteSpider, self.website_id)
+        self.crawler.crawl(SplashWebsiteSpider, [self.website_id, self.force])
         self.crawler.start()
 
 
@@ -38,8 +39,8 @@ def run_website_spider(website_id):
     crawler.join()
 
 
-def run_splash_website_spider(website_id):
-    crawler = SplashWebsiteSpiderStarter(website_id)
+def run_splash_website_spider(website_id, force=False):
+    crawler = SplashWebsiteSpiderStarter(website_id, force)
     crawler.start()
     crawler.join()
 
@@ -50,8 +51,8 @@ def website_spider(website_id):
 
 
 @app.task
-def splash_website_spider(website_id):
-    return run_splash_website_spider(website_id)
+def splash_website_spider(website_id, force=False):
+    return run_splash_website_spider(website_id, force)
 
 
 @app.task
