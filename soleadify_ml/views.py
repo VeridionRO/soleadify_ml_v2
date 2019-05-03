@@ -2,11 +2,14 @@ import socket
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import json
+import logging
 
-from soleadify_ml.models.website_version import WebsiteVersion
+from scrapy.crawler import CrawlerProcess
+from scrapy.utils.project import get_project_settings
+
+from crawler.spiders.splash_website_spider import SplashWebsiteSpider
 from soleadify_ml.utils.SocketUtils import recv_end, connect
 from soleadify_ml.utils.LocationUtils import get_location
-import logging
 
 logger = logging.getLogger(__name__)
 
@@ -78,7 +81,11 @@ def location(request):
 @csrf_exempt
 def testing(request):
     website_id = request.GET.get('website_id', 0)
-    WebsiteVersion.parse(website_id, True)
+
+    settings = get_project_settings()
+    crawler = CrawlerProcess(settings)
+    crawler.crawl(SplashWebsiteSpider, website=website_id, force=True)
+    crawler.start()
 
 # @csrf_exempt
 # def test(request):

@@ -29,7 +29,7 @@ class SplashWebsiteSpiderStarter(Process):
         self.force = force
 
     def run(self):
-        self.crawler.crawl(SplashWebsiteSpider, [self.website_id, self.force])
+        self.crawler.crawl(SplashWebsiteSpider, website_id=self.website_id, force=self.force)
         self.crawler.start()
 
 

@@ -1,8 +1,11 @@
 import scrapy
+import logging
 from scrapy_splash import SplashRequest
 from crawler.pipelines.splash_website_pipeline import SplashWebsitePipeline
 from soleadify_ml.models.website import Website
 from soleadify_ml.models.website_job import WebsiteJob
+
+logger = logging.getLogger('soleadify_ml')
 
 script = """
 function main(splash, args)
@@ -25,10 +28,11 @@ class SplashWebsiteSpider(scrapy.Spider):
     http_pass = 'userpass'
     force = False
 
-    def __init__(self, website_id, force=False, **kw):
+    def __init__(self, website_id=None, force=False, **kw):
         self.website = Website.objects.get(pk=website_id)
         self.splash_job = self.website.splash_job()
         self.force = force
+
         super(SplashWebsiteSpider, self).__init__(**kw)
 
     def start_requests(self):
@@ -51,7 +55,7 @@ class SplashWebsiteSpider(scrapy.Spider):
             endpoint='execute',
             cache_args=['lua_source'],
             args={
-                'wait': 0.5,
+                'wait': 2,
                 'html': 1,
                 'lua_source': script,
                 'png': 1
