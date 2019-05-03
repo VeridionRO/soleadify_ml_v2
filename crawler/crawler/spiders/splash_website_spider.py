@@ -39,7 +39,8 @@ class SplashWebsiteSpider(scrapy.Spider):
                 status='working'
             )
             self.splash_job.save()
-        if not self.website.has_s3_file():
+
+        if self.website.has_s3_file():
             return
 
         yield SplashRequest(
