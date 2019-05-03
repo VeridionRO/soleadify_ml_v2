@@ -38,7 +38,7 @@ class SplashWebsiteSpider(scrapy.Spider):
     def start_requests(self):
 
         if self.splash_job and self.splash_job.status != 'pending':
-            logger.debug('already processed: ' + self.website.id)
+            logger.debug('already processed: ' + str(self.website.id))
             return
         elif not self.splash_job:
             self.splash_job = WebsiteJob(
