@@ -37,7 +37,7 @@ class SplashWebsiteSpider(scrapy.Spider):
 
     def start_requests(self):
 
-        if self.splash_job and self.splash_job.status != 'pending' and not self.force:
+        if self.splash_job and self.splash_job.status != 'pending':
             return
         elif not self.splash_job:
             self.splash_job = WebsiteJob(
