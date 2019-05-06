@@ -73,5 +73,5 @@ def splash_website_spider(website_id, force=False):
 
 
 @app.task
-def get_version(website_id):
-    run_website_version(website_id)
+def get_version(website_id, force):
+    run_website_version(website_id, force)
