@@ -87,8 +87,8 @@ class WebsiteVersion(models.Model):
                 if retry >= 2:
                     break
                 elif 1 <= retry < 2:
-                    logger.error("website: %s, index: %s, message: sleeping" % (website.id, index))
-                    time.sleep(20)
+                    logger.debug("website: %s, index: %s, message: sleeping" % (website.id, index))
+                    time.sleep(10)
 
             page_strings = text.split('\n')
             for page_string in page_strings:
