@@ -77,7 +77,6 @@ class WebsiteVersion(models.Model):
                 except urllib.request.HTTPError as e:
                     logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
                     error_count += 1
-                    retry += 1
                 except URLError as e:
                     # os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
                     #           '/var/www/cc-index-server/info.log')
@@ -86,7 +85,7 @@ class WebsiteVersion(models.Model):
 
                 if retry >= 2:
                     break
-                elif retry >= 1:
+                elif 1 <= retry < 2:
                     logger.error("website: %s, index: %s, message: sleeping" % (website.id, index))
                     time.sleep(20)
 
