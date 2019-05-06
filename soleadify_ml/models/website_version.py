@@ -1,5 +1,6 @@
 import json
 import os
+import time
 from urllib.error import URLError
 
 import requests
@@ -63,21 +64,31 @@ class WebsiteVersion(models.Model):
             if error_count >= 3:
                 break
 
+            text = ''
+            retry = 0
             index_list = []
             logger.debug("website: %s, index: %s" % (website.id, index))
             url = '%s%s-index?url=%s*&output=json' % (settings.COMMON_CRAWL_SERVER, index, website.get_domain())
-            try:
-                response = urllib.request.urlopen(url, timeout=30)
-                text = response.read().decode('utf-8')
-            except urllib.request.HTTPError as e:
-                logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
-                error_count += 1
-                continue
-            except URLError as e:
-                # os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
-                #           '/var/www/cc-index-server/info.log')
-                logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
-                continue
+            while True:
+                try:
+                    response = urllib.request.urlopen(url)
+                    text = response.read().decode('utf-8')
+                    break
+                except urllib.request.HTTPError as e:
+                    logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
+                    error_count += 1
+                    retry += 1
+                except URLError as e:
+                    # os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
+                    #           '/var/www/cc-index-server/info.log')
+                    logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
+                    retry += 1
+
+                if retry >= 2:
+                    break
+                elif retry >= 1:
+                    logger.error("website: %s, index: %s, message: sleeping" % (website.id, index))
+                    time.sleep(20)
 
             page_strings = text.split('\n')
             for page_string in page_strings:
