@@ -15,21 +15,22 @@ class Command(BaseCommand):
 
     def handle(self, *args, **options):
         step = options['step']
-        limit = 2000000
-        offset = step * 2000000
+        limit = 2000
+        offset = step * 2000
         websites = Website.objects.raw(
             # "select w.id from websites w limit %s offset %s" % (limit, offset)
             "select w.id from websites w "
-            "LEFT JOIN website_jobs wj on w.id = wj.website_id and wj.job_type=9 and status='finished' "
+            "LEFT JOIN website_jobs wj on w.id = wj.website_id and wj.job_type=9 "
             "where wj.id is null"
         )
         # progress_bar = tqdm(desc="Processing", total=len(websites))
-        website_ids = []
+        # website_ids = []
         for website in websites:
-            website_ids.append(website.id)
-            if len(website_ids) > 100:
-                get_version.chunks(zip(website_ids, range(10)), [False] * len(website_ids)).apply_async(queue='version')
-                website_ids = []
+            get_version.delay(website.id, False)
+            # website_ids.append(website.id)
+            # if len(website_ids) > 1000:
+            #     get_version.chunks(zip(website_ids, [False] * len(website_ids)), 100).apply_async(queue='version')
+            #     website_ids = []
             logger.info(website.id)
             # progress_bar.update(1)
         # progress_bar.close()
