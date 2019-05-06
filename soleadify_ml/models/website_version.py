@@ -67,7 +67,7 @@ class WebsiteVersion(models.Model):
             logger.debug("website: %s, index: %s" % (website.id, index))
             url = '%s%s-index?url=%s*&output=json' % (settings.COMMON_CRAWL_SERVER, index, website.get_domain())
             try:
-                response = urllib.request.urlopen(url)
+                response = urllib.request.urlopen(url, timeout=30)
                 text = response.read().decode('utf-8')
             except urllib.request.HTTPError as e:
                 logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
