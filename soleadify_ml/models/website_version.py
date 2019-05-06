@@ -74,8 +74,8 @@ class WebsiteVersion(models.Model):
                 error_count += 1
                 continue
             except URLError as e:
-                os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
-                          '/var/www/cc-index-server/info.log')
+                # os.system('/etc/anaconda3/bin/wayback -t 5 -d /var/www/cc-index-server/ > '
+                #           '/var/www/cc-index-server/info.log')
                 logger.error("website: %s, index: %s, error: %s" % (website.id, index, e))
                 continue
 
