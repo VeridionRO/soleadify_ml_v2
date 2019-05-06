@@ -33,17 +33,6 @@ class SplashWebsiteSpiderStarter(Process):
         self.crawler.start()
 
 
-class VersionWebsiteStarter(Process):
-    def __init__(self, website_id, force=False):
-        Process.__init__(self)
-        self.website_id = website_id
-        self.force = force
-
-    def run(self):
-        from soleadify_ml.models.website_version import WebsiteVersion
-        WebsiteVersion.parse(self.website_id, self.force)
-
-
 def run_website_spider(website_id):
     crawler = WebsiteSpiderStarter(website_id)
     crawler.start()
@@ -52,12 +41,6 @@ def run_website_spider(website_id):
 
 def run_splash_website_spider(website_id, force=False):
     crawler = SplashWebsiteSpiderStarter(website_id, force)
-    crawler.start()
-    crawler.join()
-
-
-def run_website_version(website_id, force=False):
-    crawler = VersionWebsiteStarter(website_id, force)
     crawler.start()
     crawler.join()
 
@@ -74,4 +57,5 @@ def splash_website_spider(website_id, force=False):
 
 @app.task
 def get_version(website_id, force):
-    run_website_version(website_id, force)
+    from soleadify_ml.models.website_version import WebsiteVersion
+    WebsiteVersion.parse(website_id, force)
