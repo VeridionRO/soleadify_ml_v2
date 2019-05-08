@@ -1,9 +1,12 @@
+import urllib.request
 import socket
 from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import json
 import logging
 import time
+
+from soleadify_ml.utils.HTML2TextV2 import HTML2TextV2
 from soleadify_ml.utils.SocketUtils import recv_end, connect
 from soleadify_ml.utils.LocationUtils import get_location
 
@@ -75,4 +78,20 @@ def location(request):
 
 @csrf_exempt
 def testing(request):
-    return HttpResponse(json.dumps(['a']), content_type='application/json')
+    response = urllib.request.urlopen('https://1800radiator.com/en-US/Home/ContactUs')
+    html = response.read().decode('utf-8')
+
+    converter = HTML2TextV2(bodywidth=0)
+    converter.ignore_images = True
+    converter.single_line_break = True
+    converter.inheader = True
+    converter.get_email_phone = True
+    converter.emphasis_mark = ' '
+    text = converter.handle(html)
+
+    soc_location = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+    soc_location.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+    connect(soc_location, '', 50006)
+
+    website_location = get_location(soc_location, text, '')
+    return HttpResponse(json.dumps(website_location), content_type='application/json')
