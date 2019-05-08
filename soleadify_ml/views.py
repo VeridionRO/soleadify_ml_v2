@@ -3,11 +3,7 @@ from django.views.decorators.csrf import csrf_exempt
 from django.http import HttpResponse
 import json
 import logging
-
-from scrapy.crawler import CrawlerProcess
-from scrapy.utils.project import get_project_settings
-
-from crawler.spiders.splash_website_spider import SplashWebsiteSpider
+import time
 from soleadify_ml.utils.SocketUtils import recv_end, connect
 from soleadify_ml.utils.LocationUtils import get_location
 
@@ -22,8 +18,6 @@ def category(request):
     :return:
     """
     website_id = request.POST.get('website_id', '')
-    # t1 = time.time()
-    # logger.info(str(website_id) + ' - started category request!')
     # category socket
     soc_category = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     soc_category.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
@@ -40,8 +34,6 @@ def category(request):
             logger.info(str(website_id) + "error")
 
     soc_category.close()
-    # t2 = time.time()
-    # logger.info(str(website_id) + ' - ' + str(t2 - t1) + 'ended category request!')
 
     return HttpResponse(json.dumps(category_ids), content_type='application/json')
 
@@ -53,6 +45,8 @@ def location(request):
     :param request:
     :return:
     """
+    t1 = time.time()
+    logger.info(str(t1))
     website_id = request.POST.get('website_id', 0)
     text = request.POST.get('text', '''
 Park Cities/Dallas
@@ -86,8 +80,8 @@ We serve clients throughout Texas including those in the following localities: D
 
     soc_location.close()
 
-    # t2 = time.time()
-    # logger.info(str(website_id) + ' - ' + str(t2 - t1))
+    t2 = time.time()
+    logger.info(str(t2 - t1))
 
     return HttpResponse(json.dumps(website_location), content_type='application/json')
 
