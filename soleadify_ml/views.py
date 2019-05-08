@@ -94,23 +94,4 @@ We serve clients throughout Texas including those in the following localities: D
 
 @csrf_exempt
 def testing(request):
-    soc_location = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    soc_location.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-    connect(soc_location, '', 50006)
-    website_location = get_location(soc_location, '''
-Park Cities/Dallas
-8115 Preston Rd #270
-Dallas, TX 75225
-Phone: 214.692.8200
-Fax: 214.692.8255
- 
-Collin County
-By Appointment Only
-5700 Granite Pkwy #200
-Plano, TX 75024
-Phone: 972.731.2501
- Green Initiative
-Hablamos Español
-We serve clients throughout Texas including those in the following localities: Dallas County including Dallas, Garland, Highland Park, Irving, Mesquite, Richardson, and University Park; Collin County including Allen, Frisco, McKinney, Murphy, Plano, and Prosper; Denton County including Carrollton, Denton, Lewisville, and Little Elm; Ector County including Odessa; Fort Bend County including Richmond and Sugar Land; Grayson County including Denison and Sherman; Harris County including Houston; Lamar County including Paris; Midland County including Midland; Rockwall County including Rockwall; Tarrant County including Colleyville, Fort Worth, and Southlake; Travis County including Austin; and Williamson County including Round Rock.
-    ''', 'us')
-    return HttpResponse(json.dumps(website_location), content_type='application/json')
+    return HttpResponse(json.dumps(['a']), content_type='application/json')
