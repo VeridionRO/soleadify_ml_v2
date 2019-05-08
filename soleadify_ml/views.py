@@ -9,9 +9,6 @@ from soleadify_ml.utils.LocationUtils import get_location
 
 logger = logging.getLogger(__name__)
 
-t1 = time.time()
-logger.info(str(t1))
-
 
 @csrf_exempt
 def category(request):
@@ -48,6 +45,8 @@ def location(request):
     :param request:
     :return:
     """
+    t1 = time.time()
+    logger.info(str(t1))
     website_id = request.POST.get('website_id', 0)
     text = request.POST.get('text', '')
     logger.info(text)
