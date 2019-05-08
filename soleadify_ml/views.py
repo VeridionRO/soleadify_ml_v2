@@ -48,21 +48,7 @@ def location(request):
     t1 = time.time()
     logger.info(str(t1))
     website_id = request.POST.get('website_id', 0)
-    text = request.GET.get('text', '''
-Park Cities/Dallas
-8115 Preston Rd #270
-Dallas, TX 75225
-Phone: 214.692.8200
-Fax: 214.692.8255
- 
-Collin County
-By Appointment Only
-5700 Granite Pkwy #200
-Plano, TX 75024
-Phone: 972.731.2501
- Green Initiative
-Hablamos Español
-We serve clients throughout Texas including those in the following localities: Dallas County including Dallas, Garland, Highland Park, Irving, Mesquite, Richardson, and University Park; Collin County including Allen, Frisco, McKinney, Murphy, Plano, and Prosper; Denton County including Carrollton, Denton, Lewisville, and Little Elm; Ector County including Odessa; Fort Bend County including Richmond and Sugar Land; Grayson County including Denison and Sherman; Harris County including Houston; Lamar County including Paris; Midland County including Midland; Rockwall County including Rockwall; Tarrant County including Colleyville, Fort Worth, and Southlake; Travis County including Austin; and Williamson County including Round Rock.''')
+    text = request.GET.get('text', '', website_id)
     logger.info(text)
     country_code = request.POST.get('country_code', '')
 
