@@ -63,6 +63,7 @@ Phone: 972.731.2501
  Green Initiative
 Hablamos Español
 We serve clients throughout Texas including those in the following localities: Dallas County including Dallas, Garland, Highland Park, Irving, Mesquite, Richardson, and University Park; Collin County including Allen, Frisco, McKinney, Murphy, Plano, and Prosper; Denton County including Carrollton, Denton, Lewisville, and Little Elm; Ector County including Odessa; Fort Bend County including Richmond and Sugar Land; Grayson County including Denison and Sherman; Harris County including Houston; Lamar County including Paris; Midland County including Midland; Rockwall County including Rockwall; Tarrant County including Colleyville, Fort Worth, and Southlake; Travis County including Austin; and Williamson County including Round Rock.''')
+    logger.info(text)
     country_code = request.POST.get('country_code', '')
 
     # t1 = time.time()
