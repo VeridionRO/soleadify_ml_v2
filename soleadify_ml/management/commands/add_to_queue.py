@@ -20,8 +20,8 @@ class Command(BaseCommand):
         websites = Website.objects.raw(
             # "select w.id from websites w limit %s offset %s" % (limit, offset)
             "select w.id from websites w "
-            "LEFT JOIN website_jobs wj on w.id = wj.website_id and wj.job_type=9 "
-            "where wj.id is null"
+            "LEFT JOIN website_versions wj on w.id = wj.website_id "
+            "where wj.id is null "
         )
         # progress_bar = tqdm(desc="Processing", total=len(websites))
         # website_ids = []
