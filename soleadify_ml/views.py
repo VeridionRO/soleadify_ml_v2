@@ -52,7 +52,6 @@ def location(request):
     logger.info(str(t1))
     website_id = request.POST.get('website_id', 0)
     text = request.POST.get('text', '')
-    logger.info(text)
     country_code = request.POST.get('country_code', '')
 
     # t1 = time.time()
