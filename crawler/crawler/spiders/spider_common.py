@@ -18,7 +18,7 @@ class SpiderCommon:
     texts = {}
     contacts = {}
     temp_contacts = {}
-    max_pages = 500
+    max_pages = 200
     cached_docs = {}
     soc_spacy = None
     country_codes = []
@@ -149,7 +149,7 @@ class SpiderCommon:
         return score
 
     def remove_meta(self, key, value):
-        crawled_pages = 500 - self.max_pages
+        crawled_pages = 200 - self.max_pages
         metas = self.website_metas[key]
         if value in metas and metas[value] / crawled_pages < 0.5:
             del self.website_metas[key][value]
