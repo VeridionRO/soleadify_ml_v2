@@ -59,8 +59,7 @@ class WebsiteSpider(scrapy.Spider, SpiderCommon):
     def start_requests(self):
         if self.url:
             logger.debug('start website: ' + self.url)
-            return []
-            # return [Request(self.url, callback=self.parse, dont_filter=True)]
+            return [Request(self.url, callback=self.parse, dont_filter=True)]
         else:
             return []
 
