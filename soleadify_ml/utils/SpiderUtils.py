@@ -154,7 +154,7 @@ def check_email(email):
 
 def merge_dicts(dic1, dic2):
     for key, values2 in dic2.items():
-        if key in ['ORG', 'TITLE', 'EMAIL', 'PHONE', 'PERSON', 'LAW_CAT']:
+        if key in ['ORG', 'TITLE', 'EMAIL', 'PHONE', 'PERSON']:
             if key in dic1:
                 values1 = dic1[key]
                 if not isinstance(values1, list) and not isinstance(values2, list):

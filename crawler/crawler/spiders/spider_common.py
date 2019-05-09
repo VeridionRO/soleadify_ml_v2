@@ -30,7 +30,6 @@ class SpiderCommon:
         'EMAIL': Counter(),
         'PHONE': Counter(),
         'ORG': Counter(),
-        'LAW_CAT': Counter(),
     }
     has_contacts = False
 
@@ -70,7 +69,7 @@ class SpiderCommon:
             text = ent['text']
             if label in ['EMAIL', 'PHONE']:
                 self.has_contacts = True
-            if label in ['EMAIL', 'PHONE', 'ORG', 'LAW_CAT']:
+            if label in ['EMAIL', 'PHONE', 'ORG']:
                 if label not in website_metas_temp:
                     website_metas_temp[label] = {}
                 website_metas_temp[label][text] = True
