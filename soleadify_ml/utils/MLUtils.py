@@ -97,6 +97,8 @@ def convert_dataturks_to_spacy(dataturks_json_filepath):
                         labels = [labels]
 
                     for label in labels:
+                        if label == 'LAW_CAT':
+                            continue
                         # dataturks indices are both inclusive [start, end] but spacy is not [start, end)
                         entities.append((point['start'], point['end'] + 1, label))
 
