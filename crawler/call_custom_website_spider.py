@@ -1,3 +1,3 @@
 from scrapy import cmdline
 
-cmdline.execute("scrapy crawl CustomWebsiteSpider -a link=https://www.martindale.com/organization/duane-morris-llp-190381/new-york-new-york-445139-f/".split())
+cmdline.execute("scrapy crawl CustomWebsiteSpider -a link=https://www.bbklaw.com/getmedia/65cf762a-083e-471f-9617-39584d98e6af/Michelle-Ouellette?ext=.vcf".split())

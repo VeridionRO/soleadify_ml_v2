@@ -167,8 +167,6 @@ class SpiderCommon:
 
                 for doc in docs:
                     # if the phone is not valid for the country ignore it
-                    if doc['label'] in ['PHONE', ['EMAIL']]:
-                        self.has_contacts = True
                     if doc['label'] == 'PHONE':
                         valid_phone = WebsiteContactMeta.get_valid_country_phone(self.country_codes, doc['text'])
                         if valid_phone:
@@ -181,6 +179,11 @@ class SpiderCommon:
         except Exception as ve:
             logger.error("%s : %s", url, ve)
             return new_docs
+
+        for doc in new_docs:
+            # if the phone is not valid for the country ignore it
+            if doc['label'] in ['PHONE', 'EMAIL']:
+                self.has_contacts = True
 
         return new_docs
 
