@@ -8,9 +8,8 @@ apt-get install gcc
 apt-get install awscli
 apt-get install supervisor
 pip install mysqlclient
-pip install spacy-nightly
+pip install spacy
 pip install django_mysql
-pip install spacy-nightly
 pip install Django==2.2b1
 pip install celery
 pip install django_mysql

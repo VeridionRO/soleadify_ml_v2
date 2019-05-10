@@ -67,8 +67,6 @@ class SpiderCommon:
         for ent in docs:
             label = ent['label']
             text = ent['text']
-            if label in ['EMAIL', 'PHONE']:
-                self.has_contacts = True
             if label in ['EMAIL', 'PHONE', 'ORG']:
                 if label not in website_metas_temp:
                     website_metas_temp[label] = {}
@@ -156,6 +154,7 @@ class SpiderCommon:
 
     def get_entities(self, text, url):
         new_docs = []
+        self.has_contacts = False
         if not text:
             return new_docs
         dom_element_text_key = hashlib.md5(text.encode()).hexdigest()
@@ -168,6 +167,8 @@ class SpiderCommon:
 
                 for doc in docs:
                     # if the phone is not valid for the country ignore it
+                    if doc['label'] in ['PHONE', ['EMAIL']]:
+                        self.has_contacts = True
                     if doc['label'] == 'PHONE':
                         valid_phone = WebsiteContactMeta.get_valid_country_phone(self.country_codes, doc['text'])
                         if valid_phone:
@@ -227,7 +228,9 @@ class SpiderCommon:
         self.added_time += time.time() - t1
         logger.debug(page + ' - ' + str(self.added_time))
 
-        contact = self.enough_for_a_person(docs, person_name, dom_element_text)
+        contact = None
+        if self.has_contacts:
+            contact = self.enough_for_a_person(docs, person_name, dom_element_text)
 
         if contact and previous_contact and 'PERSON' in previous_contact and 'PERSON' in contact and len(
                 previous_contact['PERSON']) > 0 and len(previous_contact['PERSON']) < len(contact['PERSON']):

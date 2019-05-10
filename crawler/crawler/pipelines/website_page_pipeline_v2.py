@@ -26,6 +26,9 @@ class WebsitePagePipelineV2(object):
             text = spider.get_text_from_element(spider, html=html)
             docs = spider.get_entities(text, response.url)
 
+            if not spider.has_contacts:
+                return []
+
             logger.debug("%s - get emails", response.url)
             p = re.compile(r'[a-zA-Z0-9_.+-]+@[a-zA-Z0-9-]+\.[a-zA-Z0-9-.]+')
             parts = response.text.split('\n')
@@ -37,9 +40,6 @@ class WebsitePagePipelineV2(object):
 
             logger.debug("%s - get names", response.url)
             person_names = spider.get_person_names(docs)
-
-            if not spider.has_contacts:
-                return []
 
             for person_name in person_names:
                 if spider.contact_done(person_name, response.url):
